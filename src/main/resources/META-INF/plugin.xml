@@ -1,0 +1,22 @@
+<idea-plugin>
+    <id>com.taptima.phalyfusion-plugin</id>
+    <name>Phalyfusion</name>
+    <vendor email="koberskii@taptima.ru" url="https://taptima.ru/">Taptima</vendor>
+
+    <description><![CDATA[
+    Phalyfusion description lol arbidol Phalyfusion description lol arbidol
+    ]]></description>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.jetbrains.php</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>
