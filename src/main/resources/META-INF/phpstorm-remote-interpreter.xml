@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="ru.taptima.phalyfusion">
+        <phpStanConfigurationProvider implementation="ru.taptima.phalyfusion.remote.PhpStanValidatorRemoteConfigurationProvider"/>
+    </extensions>
+</idea-plugin>
