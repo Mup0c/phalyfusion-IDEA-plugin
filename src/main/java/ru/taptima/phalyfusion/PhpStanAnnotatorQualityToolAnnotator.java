@@ -4,6 +4,7 @@ import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.PathUtil;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
 import com.jetbrains.php.tools.quality.*;
 import ru.taptima.phalyfusion.blacklist.PhpStanValidatorBlackList;
@@ -44,7 +45,8 @@ public class PhpStanAnnotatorQualityToolAnnotator extends QualityToolAnnotator {
     }
 
     protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo, @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
-        List<String> params = getCommandLineOptions(annotatorInfo.getFilePath());
+        //List<String> params = getCommandLineOptions(annotatorInfo.getFilePath());
+        List<String> params = getCommandLineOptions(PathUtil.toSystemIndependentName(annotatorInfo.getOriginalFile().getPath()));
         PhpStanValidatorBlackList blackList = PhpStanValidatorBlackList.getInstance(annotatorInfo.getProject());
 
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
@@ -63,7 +65,7 @@ public class PhpStanAnnotatorQualityToolAnnotator extends QualityToolAnnotator {
         ArrayList<String> options = new ArrayList<>();
 
         options.add("analyse");
-        options.add("--error-format=checkstyle");
+        options.add("--format=checkstyle");
         options.add(filePath);
 
         return options;

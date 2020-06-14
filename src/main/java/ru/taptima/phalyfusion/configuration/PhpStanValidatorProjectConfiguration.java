@@ -42,7 +42,7 @@ public class PhpStanValidatorProjectConfiguration extends QualityToolProjectConf
 
     @NotNull
     protected String getQualityToolName() {
-        return "PhpStan Validator";
+        return "Phalyfusion Validator";
     }
 
     @NotNull

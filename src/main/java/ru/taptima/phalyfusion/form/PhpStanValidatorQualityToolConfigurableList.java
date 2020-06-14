@@ -29,7 +29,7 @@ public class PhpStanValidatorQualityToolConfigurableList extends QualityToolConf
 
             return new PhpStanValidatorConfigurableForm<>(project, settings);
         }, initialElement);
-        this.setSubjectDisplayName("phpstan");
+        this.setSubjectDisplayName("phalyfusion");
     }
 
     @Nullable
@@ -46,6 +46,6 @@ public class PhpStanValidatorQualityToolConfigurableList extends QualityToolConf
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "PhpStan";
+        return "Phalyfusion";
     }
 }

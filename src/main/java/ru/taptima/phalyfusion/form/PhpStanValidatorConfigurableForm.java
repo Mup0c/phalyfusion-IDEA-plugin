@@ -31,12 +31,12 @@ public class PhpStanValidatorConfigurableForm<C extends PhpStanValidatorConfigur
 
     @NotNull
     public Pair<Boolean, String> validateMessage(String message) {
-        return message.contains("PHPStan")
+        return message.contains("Phalyfusion")
             ? Pair.create(true, "OK, " + message)
             : Pair.create(false, message);
     }
 
     public boolean isValidToolFile(VirtualFile file) {
-        return file.getName().startsWith("phpstan");
+        return file.getName().startsWith("phalyfusion");
     }
 }

@@ -19,6 +19,6 @@ public class PhpStanValidatorIgnoredFilesConfigurable extends QualityToolsIgnore
 
     @NotNull
     protected String getQualityToolName() {
-        return "PhpStan Validator";
+        return "Phalyfusion Validator";
     }
 }

@@ -26,17 +26,17 @@ public class PhpStanValidatorConfigurationBaseManager extends QualityToolConfigu
 
     @NotNull
     protected String getQualityToolName() {
-        return "PhpStan";
+        return "Phalyfusion";
     }
 
     @NotNull
     protected String getOldStyleToolPathName() {
-        return "phpstan";
+        return "phalyfusion";
     }
 
     @NotNull
     protected String getConfigurationRootName() {
-        return "phpstan_settings";
+        return "phalyfusion_settings";
     }
 
     @Nullable

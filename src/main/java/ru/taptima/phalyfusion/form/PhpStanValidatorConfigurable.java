@@ -26,7 +26,7 @@ public class PhpStanValidatorConfigurable extends QualityToolProjectConfigurable
 
     @Nls
     public String getDisplayName() {
-        return "PhpStan";
+        return "Phalyfusion";
     }
 
     public String getHelpTopic() {

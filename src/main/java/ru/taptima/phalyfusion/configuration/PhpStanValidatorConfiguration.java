@@ -19,8 +19,8 @@ public class PhpStanValidatorConfiguration implements QualityToolConfiguration {
     private static final String LOCAL = "Local";
     private String myPHPStanPath = "";
     private String myStandards = "";
-    private int myMaxMessagesPerFile = 50;
-    private int myTimeoutMs = 5000;
+    private int myMaxMessagesPerFile = 100;
+    private int myTimeoutMs = 30000;
 
     public PhpStanValidatorConfiguration() {
     }

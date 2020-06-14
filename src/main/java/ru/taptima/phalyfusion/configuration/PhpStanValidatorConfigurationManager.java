@@ -39,7 +39,7 @@ public class PhpStanValidatorConfigurationManager extends QualityToolConfigurati
     }
 
     @State(
-        name = "PhpStanValidator",
+        name = "PhalyfusionValidator",
         storages = {@Storage("php.xml")}
     )
     static class AppPhpStanValidatorConfigurationBaseManager extends PhpStanValidatorConfigurationBaseManager {
@@ -47,7 +47,7 @@ public class PhpStanValidatorConfigurationManager extends QualityToolConfigurati
     }
 
     @State(
-        name = "PhpStanValidator",
+        name = "PhalyfusionValidator",
         storages = {@Storage("php.xml")}
     )
     static class ProjectPhpStanValidatorConfigurationBaseManager extends PhpStanValidatorConfigurationBaseManager {
