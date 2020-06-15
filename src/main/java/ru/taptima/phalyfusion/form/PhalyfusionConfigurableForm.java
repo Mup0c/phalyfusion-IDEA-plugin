@@ -4,29 +4,29 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.php.tools.quality.QualityToolConfigurableForm;
-import ru.taptima.phalyfusion.configuration.PhpStanValidatorConfiguration;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class PhpStanValidatorConfigurableForm<C extends PhpStanValidatorConfiguration> extends QualityToolConfigurableForm<C> {
-    public PhpStanValidatorConfigurableForm(@NotNull Project project, @NotNull C configuration) {
-        super(project, configuration, "PhpStan", "phpstan");
+public class PhalyfusionConfigurableForm<C extends PhalyfusionConfiguration> extends QualityToolConfigurableForm<C> {
+    public PhalyfusionConfigurableForm(@NotNull Project project, @NotNull C configuration) {
+        super(project, configuration, "Phalyfusion", "phalyfusion");
     }
 
     @Nls
     public String getDisplayName() {
-        return "PhpStan";
+        return "Phalyfusion";
     }
 
     @Nullable
     public String getHelpTopic() {
-        return "settings.phpstan.codeStyle";
+        return null;
     }
 
     @NotNull
     public String getId() {
-        return PhpStanValidatorConfigurableForm.class.getName();
+        return PhalyfusionConfigurableForm.class.getName();
     }
 
     @NotNull

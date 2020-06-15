@@ -10,40 +10,36 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.jetbrains.php</depends>
 
-    <!--!!!!!!! -->
     <depends optional="true" config-file="phpstorm-remote-interpreter.xml">org.jetbrains.plugins.phpstorm-remote-interpreter</depends>
 
     <extensions defaultExtensionNs="com.intellij">
 
-        <!-- Phalyfusion quality tool support -->
-        <applicationService serviceImplementation="ru.taptima.phalyfusion.configuration.PhpStanValidatorConfigurationManager$AppPhpStanValidatorConfigurationBaseManager"/>
-        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhpStanValidatorConfigurationManager"/>
-        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhpStanValidatorConfigurationManager$ProjectPhpStanValidatorConfigurationBaseManager"/>
-        <externalAnnotator language="PHP" implementationClass="ru.taptima.phalyfusion.PhpStanAnnotatorQualityToolAnnotator"/>
-        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhpStanValidatorProjectConfiguration"/>
-        <projectService serviceImplementation="ru.taptima.phalyfusion.blacklist.PhpStanValidatorBlackList"/>
+        <applicationService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$AppPhalyfusionConfigurationBaseManager"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$ProjectPhalyfusionConfigurationBaseManager"/>
+        <externalAnnotator language="PHP" implementationClass="ru.taptima.phalyfusion.PhalyfusionAnnotator"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList"/>
         <localInspection language="PHP"
-                         shortName="PhpStanFixerValidation"
-                         displayName="PHPStan validation"
+                         shortName="PhalyfusionValidation"
+                         displayName="Phalyfusion validation"
                          groupPath="PHP"
                          groupName="Quality tools"
                          enabledByDefault="false"
                          level="WEAK WARNING"
                          cleanupTool="true"
-                         implementationClass="ru.taptima.phalyfusion.PhpStanFixerValidationInspection"/>
+                         implementationClass="ru.taptima.phalyfusion.PhalyfusionValidationInspection"/>
     </extensions>
 
-    <!--!!!!!!! -->
     <extensionPoints>
-        <extensionPoint interface="ru.taptima.phalyfusion.configuration.PhpStanValidatorConfigurationProvider"
-                        name="phpStanConfigurationProvider"/>
+        <extensionPoint interface="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationProvider"
+                        name="phalyfusionConfigurationProvider"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.jetbrains.php">
-        <!-- Phalyfusion quality tool support -->
-        <tools.quality.type implementation="ru.taptima.phalyfusion.PhpStanQualityToolType"/>
-        <tools.projectConfigurableForm instance="ru.taptima.phalyfusion.form.PhpStanValidatorConfigurable"/>
-        <config.interpreters.PhpInterpretersStateListener implementation="ru.taptima.phalyfusion.configuration.PhpStanValidatorConfigurationManager"/>
+        <tools.quality.type implementation="ru.taptima.phalyfusion.PhalyfusionQualityToolType"/>
+        <tools.projectConfigurableForm instance="ru.taptima.phalyfusion.form.PhalyfusionConfigurable"/>
+        <config.interpreters.PhpInterpretersStateListener implementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
     </extensions>
 
 </idea-plugin>

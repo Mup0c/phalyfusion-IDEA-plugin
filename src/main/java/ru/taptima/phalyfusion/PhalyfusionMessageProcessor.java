@@ -2,12 +2,15 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.codeHighlighting.HighlightDisplayLevel;
 import com.intellij.codeInsight.intention.IntentionAction;
+import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
 import com.jetbrains.php.tools.quality.QualityToolAnnotatorInfo;
 import com.jetbrains.php.tools.quality.QualityToolMessage;
 import com.jetbrains.php.tools.quality.QualityToolXmlMessageProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
+import ru.taptima.phalyfusion.form.PhalyfusionConfigurable;
 
 /**
  * All common tools all output as "checkstyle" format
@@ -22,10 +25,10 @@ import org.xml.sax.Attributes;
  *
  * @author Daniel Espendiller <daniel@espendiller.net>
  */
-abstract public class CheckstyleQualityToolMessageProcessor extends QualityToolXmlMessageProcessor {
+public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor {
     private final HighlightDisplayLevel myWarningsHighlightLevel;
 
-    public CheckstyleQualityToolMessageProcessor(QualityToolAnnotatorInfo info) {
+    public PhalyfusionMessageProcessor(QualityToolAnnotatorInfo info) {
         super(info);
         // allow config?
         // this.myWarningsHighlightLevel = ((PhpCSValidationInspection)info.getInspection()).getWarningLevel();
@@ -56,7 +59,7 @@ abstract public class CheckstyleQualityToolMessageProcessor extends QualityToolX
 
     @Nullable
     protected String getMessagePrefix() {
-        return "phpstan";
+        return "phalyfusion";
     }
 
     @Nullable
@@ -66,7 +69,12 @@ abstract public class CheckstyleQualityToolMessageProcessor extends QualityToolX
 
     @NotNull
     protected String getQuickFixFamilyName() {
-        return "PHPStan";
+        return "Phalyfusion";
+    }
+
+    @Override
+    protected Configurable getToolConfigurable(@NotNull Project project) {
+        return new PhalyfusionConfigurable(project);
     }
 
     public boolean processStdErrMessages() {

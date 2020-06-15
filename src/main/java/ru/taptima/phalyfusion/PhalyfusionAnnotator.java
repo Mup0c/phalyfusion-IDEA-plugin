@@ -7,47 +7,39 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.PathUtil;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
 import com.jetbrains.php.tools.quality.*;
-import ru.taptima.phalyfusion.blacklist.PhpStanValidatorBlackList;
-import ru.taptima.phalyfusion.configuration.PhpStanValidatorProjectConfiguration;
-import ru.taptima.phalyfusion.form.PhpStanValidatorConfigurable;
+import ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList;
+import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
+import ru.taptima.phalyfusion.form.PhalyfusionConfigurable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Daniel Espendiller <daniel@espendiller.net>
- */
-public class PhpStanAnnotatorQualityToolAnnotator extends QualityToolAnnotator {
-    public static final PhpStanAnnotatorQualityToolAnnotator INSTANCE = new PhpStanAnnotatorQualityToolAnnotator();
+public class PhalyfusionAnnotator extends QualityToolAnnotator {
+    public static final PhalyfusionAnnotator INSTANCE = new PhalyfusionAnnotator();
 
     @NotNull
     @Override
     protected String getTemporaryFilesFolder() {
-        return "phpstan_temp.tmp";
+        return "phalyfusion_temp.tmp";
     }
 
     @NotNull
     @Override
     protected String getInspectionId() {
-        return (new PhpStanFixerValidationInspection()).getID();
+        return (new PhalyfusionValidationInspection()).getID();
     }
 
     @Override
     protected QualityToolMessageProcessor createMessageProcessor(@NotNull QualityToolAnnotatorInfo qualityToolAnnotatorInfo) {
-        return new CheckstyleQualityToolMessageProcessor(qualityToolAnnotatorInfo) {
-            @Override
-            protected Configurable getToolConfigurable(@NotNull Project project) {
-                return new PhpStanValidatorConfigurable(project);
-            }
-        };
+        return new PhalyfusionMessageProcessor(qualityToolAnnotatorInfo);
     }
 
     protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo, @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
         //List<String> params = getCommandLineOptions(annotatorInfo.getFilePath());
         List<String> params = getCommandLineOptions(PathUtil.toSystemIndependentName(annotatorInfo.getOriginalFile().getPath()));
-        PhpStanValidatorBlackList blackList = PhpStanValidatorBlackList.getInstance(annotatorInfo.getProject());
+        PhalyfusionBlackList blackList = PhalyfusionBlackList.getInstance(annotatorInfo.getProject());
 
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
         QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, params);
@@ -74,7 +66,7 @@ public class PhpStanAnnotatorQualityToolAnnotator extends QualityToolAnnotator {
     @Nullable
     protected QualityToolConfiguration getConfiguration(@NotNull Project project, @NotNull LocalInspectionTool inspection) {
         try {
-            return PhpStanValidatorProjectConfiguration.getInstance(project).findSelectedConfiguration(project);
+            return PhalyfusionProjectConfiguration.getInstance(project).findSelectedConfiguration(project);
         } catch (QualityToolValidationException e) {
             return null;
         }

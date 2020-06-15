@@ -12,36 +12,33 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-/**
- * @author Daniel Espendiller <daniel@espendiller.net>
- */
-public class PhpStanValidatorConfiguration implements QualityToolConfiguration {
+public class PhalyfusionConfiguration implements QualityToolConfiguration {
     private static final String LOCAL = "Local";
-    private String myPHPStanPath = "";
+    private String myPhalyfusionPath = "";
     private String myStandards = "";
     private int myMaxMessagesPerFile = 100;
     private int myTimeoutMs = 30000;
 
-    public PhpStanValidatorConfiguration() {
+    public PhalyfusionConfiguration() {
     }
 
     @Transient
     public String getToolPath() {
-        return this.myPHPStanPath;
+        return this.myPhalyfusionPath;
     }
 
     public void setToolPath(String toolPath) {
-        this.myPHPStanPath = toolPath;
+        this.myPhalyfusionPath = toolPath;
     }
 
     @Attribute("tool_path")
     @Nullable
     public String getSerializedToolPath() {
-        return this.serialize(this.myPHPStanPath);
+        return this.serialize(this.myPhalyfusionPath);
     }
 
     public void setSerializedToolPath(@Nullable String configurationFilePath) {
-        this.myPHPStanPath = this.deserialize(configurationFilePath);
+        this.myPhalyfusionPath = this.deserialize(configurationFilePath);
     }
 
     @Attribute("max_messages_per_file")
@@ -97,21 +94,21 @@ public class PhpStanValidatorConfiguration implements QualityToolConfiguration {
         return null;
     }
 
-    public PhpStanValidatorConfiguration clone() {
-        PhpStanValidatorConfiguration settings = new PhpStanValidatorConfiguration();
+    public PhalyfusionConfiguration clone() {
+        PhalyfusionConfiguration settings = new PhalyfusionConfiguration();
         this.clone(settings);
         return settings;
     }
 
-    public void clone(@NotNull PhpStanValidatorConfiguration settings) {
-        settings.myPHPStanPath = this.myPHPStanPath;
+    public void clone(@NotNull PhalyfusionConfiguration settings) {
+        settings.myPhalyfusionPath = this.myPhalyfusionPath;
         settings.myStandards = this.myStandards;
         settings.myMaxMessagesPerFile = this.myMaxMessagesPerFile;
         settings.myTimeoutMs = this.myTimeoutMs;
     }
 
     public int compareTo(@NotNull QualityToolConfiguration o) {
-        if (!(o instanceof PhpStanValidatorConfiguration)) {
+        if (!(o instanceof PhalyfusionConfiguration)) {
             return 1;
         } else if (StringUtil.equals(this.getPresentableName(null), "Local")) {
             return -1;

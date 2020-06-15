@@ -5,18 +5,15 @@ import com.jetbrains.php.tools.quality.QualityToolAnnotator;
 import com.jetbrains.php.tools.quality.QualityToolValidationInspection;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Daniel Espendiller <daniel@espendiller.net>
- */
-public class PhpStanFixerValidationInspection extends QualityToolValidationInspection implements CleanupLocalInspectionTool {
+public class PhalyfusionValidationInspection extends QualityToolValidationInspection implements CleanupLocalInspectionTool {
     @NotNull
     @Override
     protected QualityToolAnnotator getAnnotator() {
-        return PhpStanAnnotatorQualityToolAnnotator.INSTANCE;
+        return PhalyfusionAnnotator.INSTANCE;
     }
 
     @Override
     public String getToolName() {
-        return "PHPStan";
+        return "Phalyfusion";
     }
 }

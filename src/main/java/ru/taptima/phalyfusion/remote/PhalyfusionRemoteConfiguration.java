@@ -6,15 +6,12 @@ import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.jetbrains.php.config.interpreters.PhpInterpretersManagerImpl;
 import com.jetbrains.php.config.interpreters.PhpSdkDependentConfiguration;
-import ru.taptima.phalyfusion.configuration.PhpStanValidatorConfiguration;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @author Daniel Espendiller <daniel@espendiller.net>
- */
-@Tag("phpstan_by_interpreter")
-public class PhpStanValidatorRemoteConfiguration extends PhpStanValidatorConfiguration implements PhpSdkDependentConfiguration {
+@Tag("phalyfusion_by_interpreter")
+public class PhalyfusionRemoteConfiguration extends PhalyfusionConfiguration implements PhpSdkDependentConfiguration {
     private String myInterpreterId;
 
     @Attribute("interpreter_id")
@@ -44,8 +41,8 @@ public class PhpStanValidatorRemoteConfiguration extends PhpStanValidatorConfigu
         return StringUtil.isEmpty(interpreterName) ? "Undefined interpreter" : "Interpreter: " + interpreterName;
     }
 
-    public PhpStanValidatorRemoteConfiguration clone() {
-        PhpStanValidatorRemoteConfiguration settings = new PhpStanValidatorRemoteConfiguration();
+    public PhalyfusionRemoteConfiguration clone() {
+        PhalyfusionRemoteConfiguration settings = new PhalyfusionRemoteConfiguration();
         settings.myInterpreterId = this.myInterpreterId;
         this.clone(settings);
         return settings;

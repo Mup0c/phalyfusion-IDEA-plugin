@@ -6,15 +6,12 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.php.tools.quality.QualityToolBlackList;
 
-/**
- * @author Daniel Espendiller <daniel@espendiller.net>
- */
 @State(
-    name = "PhpStanValidatorDetectorBlackList",
+    name = "PhalyfusionBlackList",
     storages = {@Storage("$WORKSPACE_FILE$")}
 )
-public class PhpStanValidatorBlackList extends QualityToolBlackList {
-    public static PhpStanValidatorBlackList getInstance(Project project) {
-        return ServiceManager.getService(project, PhpStanValidatorBlackList.class);
+public class PhalyfusionBlackList extends QualityToolBlackList {
+    public static PhalyfusionBlackList getInstance(Project project) {
+        return ServiceManager.getService(project, PhalyfusionBlackList.class);
     }
 }

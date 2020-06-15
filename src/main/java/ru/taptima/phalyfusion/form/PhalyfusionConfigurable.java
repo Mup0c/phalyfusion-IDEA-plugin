@@ -6,22 +6,19 @@ import com.jetbrains.php.tools.quality.QualityToolConfigurationComboBox;
 import com.jetbrains.php.tools.quality.QualityToolProjectConfigurableForm;
 import com.jetbrains.php.tools.quality.QualityToolProjectConfiguration;
 import com.jetbrains.php.tools.quality.QualityToolsIgnoreFilesConfigurable;
-import ru.taptima.phalyfusion.PhpStanFixerValidationInspection;
-import ru.taptima.phalyfusion.blacklist.PhpStanValidatorIgnoredFilesConfigurable;
-import ru.taptima.phalyfusion.configuration.PhpStanValidatorProjectConfiguration;
+import ru.taptima.phalyfusion.PhalyfusionValidationInspection;
+import ru.taptima.phalyfusion.blacklist.PhalyfusionIgnoredFilesConfigurable;
+import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Daniel Espendiller <daniel@espendiller.net>
- */
-public class PhpStanValidatorConfigurable extends QualityToolProjectConfigurableForm implements Configurable.NoScroll {
-    public PhpStanValidatorConfigurable(@NotNull Project project) {
+public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm implements Configurable.NoScroll {
+    public PhalyfusionConfigurable(@NotNull Project project) {
         super(project);
     }
 
     protected QualityToolProjectConfiguration getProjectConfiguration() {
-        return PhpStanValidatorProjectConfiguration.getInstance(this.myProject);
+        return PhalyfusionProjectConfiguration.getInstance(this.myProject);
     }
 
     @Nls
@@ -30,26 +27,26 @@ public class PhpStanValidatorConfigurable extends QualityToolProjectConfigurable
     }
 
     public String getHelpTopic() {
-        return "settings.phpstan.validator";
+        return null;
     }
 
     @NotNull
     public String getId() {
-        return PhpStanValidatorConfigurable.class.getName();
+        return PhalyfusionConfigurable.class.getName();
     }
 
     @NotNull
     protected String getInspectionShortName() {
-        return new PhpStanFixerValidationInspection().getShortName();
+        return new PhalyfusionValidationInspection().getShortName();
     }
 
     @NotNull
     protected QualityToolConfigurationComboBox createConfigurationComboBox() {
-        return new PhpStanValidatorConfigurationComboBox(this.myProject);
+        return new PhalyfusionConfigurationComboBox(this.myProject);
     }
 
     protected QualityToolsIgnoreFilesConfigurable getIgnoredFilesConfigurable() {
-        return new PhpStanValidatorIgnoredFilesConfigurable(this.myProject);
+        return new PhalyfusionIgnoredFilesConfigurable(this.myProject);
     }
 }
 
