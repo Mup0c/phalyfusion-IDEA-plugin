@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.taptima.phalyfusion-plugin</id>
+    <id>ru.taptima.phalyfusion</id>
     <name>Phalyfusion</name>
     <vendor email="koberskii@taptima.ru" url="https://taptima.ru/">Taptima</vendor>
 
@@ -7,16 +7,39 @@
     Phalyfusion description lol arbidol Phalyfusion description lol arbidol
     ]]></description>
 
-    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.jetbrains.php</depends>
 
+    <depends optional="true" config-file="phpstorm-remote-interpreter.xml">org.jetbrains.plugins.phpstorm-remote-interpreter</depends>
+
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
+
+        <applicationService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$AppPhalyfusionConfigurationBaseManager"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$ProjectPhalyfusionConfigurationBaseManager"/>
+        <externalAnnotator language="PHP" implementationClass="ru.taptima.phalyfusion.PhalyfusionAnnotator"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList"/>
+        <localInspection language="PHP"
+                         shortName="PhalyfusionValidation"
+                         displayName="Phalyfusion validation"
+                         groupPath="PHP"
+                         groupName="Quality tools"
+                         enabledByDefault="false"
+                         level="WEAK WARNING"
+                         cleanupTool="true"
+                         implementationClass="ru.taptima.phalyfusion.PhalyfusionValidationInspection"/>
     </extensions>
 
-    <actions>
-        <!-- Add your actions here -->
-    </actions>
+    <extensionPoints>
+        <extensionPoint interface="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationProvider"
+                        name="phalyfusionConfigurationProvider"/>
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="com.jetbrains.php">
+        <tools.quality.type implementation="ru.taptima.phalyfusion.PhalyfusionQualityToolType"/>
+        <tools.projectConfigurableForm instance="ru.taptima.phalyfusion.form.PhalyfusionConfigurable"/>
+        <config.interpreters.PhpInterpretersStateListener implementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
+    </extensions>
+
 </idea-plugin>

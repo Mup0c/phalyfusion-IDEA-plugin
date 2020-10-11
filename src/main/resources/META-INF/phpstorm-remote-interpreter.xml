@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="ru.taptima.phalyfusion">
+        <phalyfusionConfigurationProvider implementation="ru.taptima.phalyfusion.remote.PhalyfusionRemoteConfigurationProvider"/>
+    </extensions>
+</idea-plugin>
