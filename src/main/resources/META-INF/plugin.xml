@@ -42,4 +42,11 @@
         <config.interpreters.PhpInterpretersStateListener implementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
     </extensions>
 
+    <actions>
+        <action id="your.action.id" class="ru.taptima.phalyfusion.ui.runPhalyfusionInspectionAction"
+                text="Some label" description="Action description" icon="AllIcons.General.AddJdk">
+            <add-to-group group-id="ToolbarRunGroup" anchor="last" />
+        </action>
+    </actions>
+
 </idea-plugin>

@@ -59,7 +59,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     @Nullable
     protected String getMessagePrefix() {
-        return "phalyfusion";
+        return null;
     }
 
     @Nullable
