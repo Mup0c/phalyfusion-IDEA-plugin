@@ -5,7 +5,6 @@ plugins {
 
 runIde {
     ideDirectory  '/Applications/PhpStorm.app/Contents'
-    //ideaDirectory '/Applications/PhpStorm.app/Contents'
 }
 
 group 'ru.taptima'
@@ -30,6 +29,6 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
-      Add change notes here.<br>
-      <em>most HTML tags may be used</em>"""
+      Work in progress!
+      """
 }

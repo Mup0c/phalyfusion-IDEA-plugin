@@ -4,7 +4,16 @@
     <vendor email="koberskii@taptima.ru" url="https://taptima.ru/">Taptima</vendor>
 
     <description><![CDATA[
-    Phalyfusion description lol arbidol Phalyfusion description lol arbidol
+    Provides integration with <a href="https://github.com/taptima/phalyfusion">Phalyfusion</a>.<br>
+    Phalyfusion is a tool for convenient and effective usage of multiple PHP static code analysers such as:
+    <ul>
+        <li>PHPStan</li>
+        <li>Psalm</li>
+        <li>Phan</li>
+        <li>PHPMD</li>
+    </ul>
+    <a href="https://github.com/taptima/idea-php-phalyfusion-plugin">Documentation</a><br><br>
+    Work in progress!
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
