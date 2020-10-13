@@ -13,6 +13,7 @@
         <li>Phan</li>
         <li>PHPMD</li>
     </ul>
+    <br>
     <h2>Installation and usage</h2>
     <ul>
         <li>Install and configure <a href="https://github.com/taptima/phalyfusion">Phalyfusion</a> and desired code analysers</li>
