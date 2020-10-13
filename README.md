@@ -1,11 +1,26 @@
-# phalyfusion-plugin
-Phalyfusion plugin for IntelliJ IDEA 
-1. git clone
-2. open in IntelliJ IDEA
-3. add Gradle configuration with :runIde task 
-(or see Executing the plugin https://jetbrains.org/intellij/sdk/docs/tutorials/build_system/prerequisites.html#executing-the-plugin)
-4. Launch PhpStorm intance by executing the task
-5. Open your phpstorm project (Phalyfusion must be installed and configured for the project)
-5. Configure phalyfusion in preferences (add path to phalyfusion tool. Phalyfusion tool must be configured via it's config, see Phalyfusion readme)
-6. Enable phalyfusion inspection
-7. Run phalyfusion inspection on specified file or whole project
+# Phalyfusion Plugin
+
+Provides convenient IDE integrated interactive analysis report of [Phalyfusion](https://github.com/taptima/phalyfusion) tool.  
+Phalyfusion is a tool for convenient and effective usage of multiple PHP static code analysers such as:
+
+*   PHPStan
+*   Psalm
+*   Phan
+*   PHPMD
+
+## Installation and usage
+
+*   Install and configure [Phalyfusion](https://github.com/taptima/phalyfusion) and desired code analysers
+*   Install the plugin and provide path to Phalyfusion executable "Preferences | Languages & Frameworks | PHP | Quality Tools | Phalyfusion"
+*   Enable inspection in "Preferences | Editor | Inspections | PHP | Quality tools | Phalyfusion validation"
+*   Instant analysis of current file highlights found errors in your code
+*   You can manually run analysis via "Run inspection by name" choosing "Phalyfusion validation" and configuring analysis scope
+
+## Features
+
+*   Combining reports of multiple PHP static code analysers
+*   Perform instant analysis of current file
+*   Show found errors by highlighting them in code and provide descriptions in tooltips
+*   Provide file-by-file structured interactive analysis report
+
+[Documentation](https://github.com/taptima/idea-php-phalyfusion-plugin) | [Issues](https://github.com/taptima/idea-php-phalyfusion-plugin/issues)
