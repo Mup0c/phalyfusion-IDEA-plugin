@@ -1,10 +1,11 @@
 <idea-plugin>
     <id>ru.taptima.phalyfusion</id>
     <name>Phalyfusion</name>
-    <vendor email="koberskii@taptima.ru" url="https://taptima.ru/">Taptima</vendor>
+    <vendor email="it@taptima.ru" url="https://taptima.ru/">Taptima</vendor>
 
     <description><![CDATA[
-    Provides integration with <a href="https://github.com/taptima/phalyfusion">Phalyfusion</a>.<br>
+    <h1>Phalyfusion Plugin</h1><br>
+    Provides convenient IDE integrated interactive analysis report of <a href="https://github.com/taptima/phalyfusion">Phalyfusion</a> tool.<br>
     Phalyfusion is a tool for convenient and effective usage of multiple PHP static code analysers such as:
     <ul>
         <li>PHPStan</li>
@@ -12,8 +13,25 @@
         <li>Phan</li>
         <li>PHPMD</li>
     </ul>
-    <a href="https://github.com/taptima/idea-php-phalyfusion-plugin">Documentation</a><br><br>
-    Work in progress!
+    <h2>Installation and usage</h2>
+    <ul>
+        <li>Install and configure <a href="https://github.com/taptima/phalyfusion">Phalyfusion</a> and desired code analysers</li>
+        <li>Install the plugin and provide path to Phalyfusion executable "Preferences | Languages & Frameworks | PHP | Quality Tools | Phalyfusion"</li>
+        <li>Enable inspection in "Preferences | Editor | Inspections | PHP | Quality tools | Phalyfusion validation"</li>
+        <li>Instant analysis of current file highlights found errors in your code</li>
+        <li>You can manually run analysis via "Run inspection by name" choosing "Phalyfusion validation" and configuring analysis scope</li>
+    </ul>
+    <br>
+    <h2>Features</h2>
+    <ul>
+        <li>Combining reports of multiple PHP static code analysers</li>
+        <li>Perform instant analysis of current file</li>
+        <li>Show found errors by highlighting them in code and provide descriptions in tooltips</li>
+        <li>Provide file-by-file structured interactive analysis report</li>
+    </ul>
+    <br>
+    <a href="https://github.com/taptima/idea-php-phalyfusion-plugin">Documentation</a> |
+    <a href="https://github.com/taptima/idea-php-phalyfusion-plugin/issues">Issues</a>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
