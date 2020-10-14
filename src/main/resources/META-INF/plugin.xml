@@ -35,6 +35,8 @@
     <a href="https://github.com/taptima/idea-php-phalyfusion-plugin/issues">Issues</a>
     ]]></description>
 
+    <idea-version since-build="181"/>
+
     <depends>com.intellij.modules.platform</depends>
     <depends>com.jetbrains.php</depends>
 
