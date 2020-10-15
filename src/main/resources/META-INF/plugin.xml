@@ -12,6 +12,7 @@
         <li>Psalm</li>
         <li>Phan</li>
         <li>PHPMD</li>
+        <li>PHP-CS-Fixer (with --dry-run option)</li>
     </ul>
     <br>
     <h2>Installation and usage</h2>

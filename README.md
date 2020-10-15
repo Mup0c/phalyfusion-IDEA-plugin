@@ -11,6 +11,7 @@ Phalyfusion is a tool for convenient and effective usage of multiple PHP static 
 *   Psalm
 *   Phan
 *   PHPMD
+*   PHP-CS-Fixer (with --dry-run option)
 
 __Page at JetBrains marketplace:__ [Phalyfusion Plugin](https://plugins.jetbrains.com/plugin/15198-phalyfusion)
 ## Supported products
