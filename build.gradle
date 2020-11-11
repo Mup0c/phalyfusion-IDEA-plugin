@@ -4,7 +4,7 @@ plugins {
 }
 
 runIde {
-    ideDirectory  '/Applications/PhpStorm.app/Contents'
+    //ideDirectory  '/Applications/PhpStorm.app/Contents'
 }
 
 group 'ru.taptima'
@@ -20,7 +20,7 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version '2020.1.1'
+    version 'IU-2020.1.1'
     updateSinceUntilBuild false
     plugins = [
             'com.jetbrains.php:201.7223.91',
