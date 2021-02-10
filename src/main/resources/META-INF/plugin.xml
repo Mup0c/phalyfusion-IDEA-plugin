@@ -74,9 +74,11 @@
     </extensions>
 
     <actions>
-        <action id="your.action.id" class="ru.taptima.phalyfusion.ui.runPhalyfusionInspectionAction"
-                text="Some label" description="Action description" icon="AllIcons.General.AddJdk">
-            <add-to-group group-id="ToolbarRunGroup" anchor="last" />
+        <action id="ru.taptima.phalyfusion.action.PhalyfusionAction"
+                class="ru.taptima.phalyfusion.action.PhalyfusionAction" text="Run Phalyfusion"
+                description="Run phalyfusion tool" icon="AllIcons.General.AddJdk">
+            <add-to-group group-id="ToolbarRunGroup" anchor="last"/>
+            <add-to-group group-id="PhpRunMenu" anchor="last"/>
         </action>
     </actions>
 
