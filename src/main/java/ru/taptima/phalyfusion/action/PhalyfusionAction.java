@@ -28,7 +28,7 @@ public class PhalyfusionAction extends AnAction {
             psiFile = PsiManager.getInstance(currentProject).findFile(selectedFile);
         }
 
-        RunInspectionAction.runInspection(currentProject, "PhalyfusionValidation", selectedFile, null, psiFile);
+        RunInspectionAction.runInspection(currentProject, "PhalyfusionGlobal", selectedFile, null, psiFile);
     }
 
     @Override

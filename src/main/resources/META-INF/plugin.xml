@@ -51,6 +51,7 @@
         <externalAnnotator language="PHP" implementationClass="ru.taptima.phalyfusion.PhalyfusionAnnotator"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.issues.IssueCacheManager"/>
         <localInspection language="PHP"
                          shortName="PhalyfusionValidation"
                          displayName="Phalyfusion validation"
@@ -60,6 +61,23 @@
                          level="WEAK WARNING"
                          cleanupTool="true"
                          implementationClass="ru.taptima.phalyfusion.PhalyfusionValidationInspection"/>
+<!--        <localInspection-->
+<!--                language="PHP"-->
+<!--                shortName="PhalyfusionHighlighting"-->
+<!--                displayName="Phalyfusion highlighting"-->
+<!--                groupPath="PHP"-->
+<!--                groupName="Quality tools"-->
+<!--                unfair="true"-->
+<!--                implementationClass="ru.taptima.phalyfusion.PhalyfusionHighlightingInspection"/>-->
+        <globalInspection
+                language="PHP"
+                shortName="PhalyfusionGlobal"
+                displayName="Phalyfusion global"
+                groupPath="PHP"
+                groupName="Quality tools"
+                cleanupTool="true"
+                level="WEAK WARNING"
+                implementationClass="ru.taptima.phalyfusion.PhalyfusionGlobalInspection"/>
     </extensions>
 
     <extensionPoints>

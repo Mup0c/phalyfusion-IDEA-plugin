@@ -2,16 +2,16 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.execution.ExecutionException;
-import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.PathUtil;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
 import com.jetbrains.php.tools.quality.*;
 import ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
-import ru.taptima.phalyfusion.form.PhalyfusionConfigurable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ru.taptima.phalyfusion.issues.IssueCacheManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +36,18 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
         return new PhalyfusionMessageProcessor(qualityToolAnnotatorInfo);
     }
 
-    protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo, @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
+    protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo,
+                           @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
         //List<String> params = getCommandLineOptions(annotatorInfo.getFilePath());
         List<String> params = getCommandLineOptions(PathUtil.toSystemIndependentName(annotatorInfo.getOriginalFile().getPath()));
+        IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
+        //annotatorInfo.getTimeout()
+        if (annotatorInfo.isOnTheFly()) {
+            if (messageProcessor instanceof PhalyfusionMessageProcessor) {
+                ((PhalyfusionMessageProcessor)messageProcessor).loadFromCache(issuesCache.getCachedResultForFile(annotatorInfo.getOriginalFile()));
+            }
+            return;
+        }
         PhalyfusionBlackList blackList = PhalyfusionBlackList.getInstance(annotatorInfo.getProject());
 
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
@@ -51,6 +60,8 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
 
             messageProcessor.setFatalError();
         }
+
+        issuesCache.setCachedResultsForFile(annotatorInfo.getOriginalFile(), messageProcessor.getMessages());
     }
 
     private List<String> getCommandLineOptions(String filePath) {
@@ -71,4 +82,9 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
             return null;
         }
     }
+
+//    @Override
+//    public String getPairedBatchInspectionShortName() {
+//        return "PhalyfusionHighlighting";
+//    }
 }
