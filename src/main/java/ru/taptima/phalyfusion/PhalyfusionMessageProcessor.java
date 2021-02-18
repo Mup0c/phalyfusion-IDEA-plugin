@@ -40,18 +40,16 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     private final HighlightDisplayLevel myWarningsHighlightLevel;
     private final Set<String> lineMessages = new HashSet();
     private int myPrevLine = -1;
-    private PsiFile myCurFile = null;
-    private boolean isCompositeTag = false;
+    private VirtualFile myCurFile = null;
+    private boolean isFileTag = false;
 
-    private PsiManager myPsiManager;
-    private LocalFileSystem myFileSystem;
+    private final LocalFileSystem myFileSystem;
 
     public PhalyfusionMessageProcessor(QualityToolAnnotatorInfo info) {
         super(info);
         // allow config?
         // this.myWarningsHighlightLevel = ((PhpCSValidationInspection)info.getInspection()).getWarningLevel();
         this.myWarningsHighlightLevel = HighlightDisplayLevel.WARNING;
-        myPsiManager = PsiManager.getInstance(info.getProject());
         myFileSystem = LocalFileSystem.getInstance();
     }
 
@@ -61,13 +59,13 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     public int getMessageStart(@NotNull String line) {
         int messageStart = line.indexOf("<file");
-        isCompositeTag = true;
+        isFileTag = true;
         if (messageStart < 0) {
             messageStart = line.indexOf("<error");
             if (messageStart < 0) {
                 messageStart = line.indexOf("<warning");
             }
-            isCompositeTag = false;
+            isFileTag = false;
         }
 
         return messageStart;
@@ -75,7 +73,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     public int getMessageEnd(@NotNull String line)
     {
-        if (isCompositeTag) {
+        if (isFileTag) {
             return line.indexOf(">");
         }
         return line.indexOf("/>");
@@ -87,8 +85,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         }
     }
 
-    @NotNull
-    protected IntentionAction[] getQuickFix(XMLMessageHandler messageHandler) {
+    protected IntentionAction @NotNull [] getQuickFix(XMLMessageHandler messageHandler) {
         return IntentionAction.EMPTY_ARRAY;
     }
 
@@ -155,7 +152,8 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     protected void processMessage(InputSource source) throws SAXException, IOException {
         QualityToolXmlMessageProcessor.XMLMessageHandler messageHandler = this.getXmlMessageHandler();
 
-        if (isCompositeTag) {
+        if (isFileTag) {
+            // Nasty way to process file tags. It seems like there is no api to process nested tags (or I didn't find it)
             String fixedFileString = CharStreams.toString(source.getCharacterStream()) + "</file>";
             this.mySAXParser.parse(new InputSource(new StringReader(fixedFileString)), messageHandler);
         } else {
@@ -164,11 +162,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
         if (messageHandler.isStatusValid()) {
             if (messageHandler.getLineNumber() == -1 && messageHandler.getSeverity() == QualityToolMessage.Severity.WARNING) {
-                VirtualFile virtualFile = myFileSystem.findFileByPath(messageHandler.getMessageText());
-                if (virtualFile != null) {
-                    myCurFile = myPsiManager.findFile(virtualFile);
-                }
-
+                myCurFile = myFileSystem.findFileByPath(messageHandler.getMessageText());
                 return;
             }
 
@@ -189,6 +183,6 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     @Override
     public PsiFile getFile() {
-        return myCurFile;
+        return PsiManager.getInstance(myFile.getProject()).findFile(myCurFile);
     }
 }

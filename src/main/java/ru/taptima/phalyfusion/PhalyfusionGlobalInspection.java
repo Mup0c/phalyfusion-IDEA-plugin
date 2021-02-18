@@ -8,8 +8,11 @@ import com.intellij.codeInspection.ex.GlobalInspectionToolWrapper;
 import com.intellij.codeInspection.reference.RefGraphAnnotator;
 import com.intellij.codeInspection.reference.RefManager;
 import com.intellij.execution.ExecutionException;
-import com.intellij.lang.annotation.ProblemGroup;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -30,17 +33,12 @@ import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import ru.taptima.phalyfusion.issues.IssueCacheManager;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 
 public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
-    private final PhalyfusionValidationInspection myValidationInspection = new PhalyfusionValidationInspection();
-    private final QualityToolValidationInspection myQualityValidationInspection = new PhalyfusionValidationInspection();
+    private static final String GROUP_ID = "PHP External Quality Tools";
+    private static final Logger LOG = Logger.getInstance(PhalyfusionGlobalInspection.class);
 
-    public PhalyfusionGlobalInspection() {
-        super();
-    }
+    private final PhalyfusionValidationInspection myValidationInspection = new PhalyfusionValidationInspection();
 
     @Override
     public @Nullable RefGraphAnnotator getAnnotator(@NotNull RefManager refManager) {
@@ -48,82 +46,80 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     }
 
     @Override
-    public void runInspection(@NotNull AnalysisScope scope, @NotNull InspectionManager manager,
-                              @NotNull GlobalInspectionContext globalContext, @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
-        Set<VirtualFile> filesSet = new HashSet<>();
-
-        //TODO: throw an exception if smth goes wrong
-
-        scope.accept(new PsiElementVisitor() {
-            @Override
-            public void visitFile(@NotNull PsiFile file) {
-                if (!(file instanceof PsiCompiledElement)) {
-                    final VirtualFile virtualFile = file.getVirtualFile();
-                    if (virtualFile != null) {
-                        filesSet.add(virtualFile);
-                    }
-                }
-            }
-        });
-
-        PsiManager psiManager = PsiManager.getInstance(scope.getProject());
-
-        VirtualFile[] files = filesSet.stream().filter(new Predicate<VirtualFile>() {
-            @Override
-            public boolean test(VirtualFile virtualFile) {
-                return isFileSuitable(psiManager.findFile(virtualFile));
-            }
-        }).toArray(VirtualFile[]::new);
-
-        if (files.length == 0) {
-            return;
-        }
-
-        PsiFile psiFile = psiManager.findFile(files[0]);
-
-        QualityToolAnnotatorInfo annotatorInfo = collectAnnotatorInfo(psiFile);
-        QualityToolMessageProcessor messageProcessor = new PhalyfusionMessageProcessor(annotatorInfo);
-
-        String id = annotatorInfo.getInterpreterId();
-        PhpSdkAdditionalData sdkData = StringUtil.isEmpty(id) ? null : PhpInterpretersManagerImpl.getInstance(annotatorInfo.getProject()).findInterpreterDataById(id);
-        PhpSdkFileTransfer transfer = PhpSdkFileTransfer.getSdkFileTransfer(sdkData);
+    public void runInspection(@NotNull AnalysisScope scope, @NotNull InspectionManager manager, @NotNull GlobalInspectionContext globalContext,
+                              @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
+        Set<PsiFile> filesSet = new HashSet<>();
 
         try {
-            this.runTool(messageProcessor, annotatorInfo, transfer, files);
-        } catch (ExecutionException var17) {
-            // TODO: logging
-            //showProcessErrorMessage(annotatorInfo, var17.getMessage());
-            //logWarning(collectedInfo, "Can not execute quality tool", var17);
-        } finally {
-            try {
-                removeTempFile(annotatorInfo, transfer);
-            } catch (ExecutionException var16) {
-                // TODO: add logging
-                //logWarning(collectedInfo, "Can not remove temporary file", var16);
-            }
-        }
-
-        for (QualityToolMessage message : messageProcessor.getMessages()) {
-            PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
-
-            HighlightInfoType highlightInfoType = HighlightInfoType.ERROR;
-            switch (phalyfusionMessage.getSeverity()) {
-                case WARNING:
-                    highlightInfoType = HighlightInfoType.WARNING;
-                    break;
-                case INTERNAL_ERROR:
-                    continue;
-            }
-
-            // TODO: change ProblemGroup
-            GlobalInspectionUtil.createProblem(phalyfusionMessage.getFile(),
-                    HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText()).create(),
-                    phalyfusionMessage.getTextRange(), new ProblemGroup() {
+            scope.accept(new PsiElementVisitor() {
                 @Override
-                public @Nullable String getProblemName() {
-                    return "Quality Tool Error";
+                public void visitFile(@NotNull PsiFile file) {
+                    if (!(file instanceof PsiCompiledElement)) {
+                        final VirtualFile virtualFile = file.getVirtualFile();
+                        if (virtualFile != null) {
+                            filesSet.add(file);
+                        }
+                    }
                 }
-            }, InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
+            });
+
+            PhalyfusionBlackList blackList = PhalyfusionBlackList.getInstance(scope.getProject());
+
+            PsiFile[] files = filesSet.stream().filter(psiFile ->
+                    isFileSuitable(psiFile) && !blackList.containsFile(psiFile.getVirtualFile())).toArray(PsiFile[]::new);
+
+            if (files.length == 0) {
+                showInfo(getDisplayName(), "Phalyfusion did not run", "No files to analyse",
+                        NotificationType.INFORMATION, null);
+                return;
+            }
+
+            QualityToolAnnotatorInfo annotatorInfo = collectAnnotatorInfo(files[0]);
+            if (annotatorInfo == null) {
+                showInfo(getDisplayName(), "Phalyfusion did not run", "Can not get annotatorInfo", NotificationType.ERROR, null);
+                return;
+            }
+            QualityToolMessageProcessor messageProcessor = new PhalyfusionMessageProcessor(annotatorInfo);
+            String id = annotatorInfo.getInterpreterId();
+            PhpSdkAdditionalData sdkData
+                    = StringUtil.isEmpty(id) ? null : PhpInterpretersManagerImpl.getInstance(annotatorInfo.getProject()).findInterpreterDataById(id);
+            PhpSdkFileTransfer transfer = PhpSdkFileTransfer.getSdkFileTransfer(sdkData);
+
+            try {
+                this.runTool(messageProcessor, annotatorInfo, transfer, files);
+            } catch (ExecutionException e) {
+                showInfo(getDisplayName(), "Can not execute quality tool", e.getMessage(), NotificationType.ERROR, annotatorInfo);
+            } finally {
+                try {
+                    removeTempFile(annotatorInfo, transfer);
+                } catch (ExecutionException e) {
+                    logWarning("Can not remove temporary file", e.getMessage(), annotatorInfo);
+                }
+            }
+
+            PsiManager psiManager = PsiManager.getInstance(scope.getProject());
+
+            for (QualityToolMessage message : messageProcessor.getMessages()) {
+                PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
+                HighlightInfoType highlightInfoType = HighlightInfoType.ERROR;
+                switch (phalyfusionMessage.getSeverity()) {
+                    case WARNING:
+                        highlightInfoType = HighlightInfoType.WARNING;
+                        break;
+                    case INTERNAL_ERROR:
+                        showInfo(getDisplayName(), "Internal error", phalyfusionMessage.getMessageText(), NotificationType.ERROR, annotatorInfo);
+                        continue;
+                }
+
+                HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText())
+                        .range(phalyfusionMessage.getTextRange()).create();
+
+                GlobalInspectionUtil.createProblem(Objects.requireNonNull(psiManager.findFile(phalyfusionMessage.getFile())),
+                        Objects.requireNonNull(highlightInfo), phalyfusionMessage.getTextRange(), () -> "Quality Tool Error",
+                        InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
+            }
+        } catch (Exception e) {
+            showInfo(getDisplayName(), "Exception during Phalyfusion run", e.getMessage(), NotificationType.ERROR, null);
         }
     }
 
@@ -135,26 +131,18 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     }
 
     private void runTool(QualityToolMessageProcessor messageProcessor, QualityToolAnnotatorInfo annotatorInfo, PhpSdkFileTransfer transfer,
-                         VirtualFile[] files)
+                         PsiFile[] files)
             throws ExecutionException {
         IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
-        String[] filesPaths = Arrays.stream(files).map(new Function<VirtualFile, String>() {
-            @Override
-            public String apply(VirtualFile virtualFile) {
-                return virtualFile.getPath();
-            }
-        }).toArray(String[]::new);
+        String[] filesPaths = Arrays.stream(files).map((PsiFile file) -> file.getVirtualFile().getPath()).toArray(String[]::new);
         List<String> params = getCommandLineOptions(filesPaths);
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
-        PhalyfusionBlackList blackList = PhalyfusionBlackList.getInstance(annotatorInfo.getProject());
 
-        // TODO: Check for blacklist
         QualityToolProcessCreator.runToolProcess(annotatorInfo, null, messageProcessor, workingDir, transfer, params);
         if (messageProcessor.getInternalErrorMessage() != null) {
             if (annotatorInfo.isOnTheFly()) {
                 String message = messageProcessor.getInternalErrorMessage().getMessageText();
-                // TODO: make this work
-                // showProcessErrorMessage(annotatorInfo, blackList, message);
+                QualityToolAnnotator.showProcessErrorMessage(annotatorInfo, message);
             }
 
             messageProcessor.setFatalError();
@@ -163,61 +151,9 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         issuesCache.setCachedResultsForFile(annotatorInfo.getOriginalFile(), messageProcessor.getMessages());
     }
 
-//TODO: make this work
-
-//    public static void showProcessErrorMessage(@NotNull final QualityToolAnnotatorInfo collectedInfo, @NotNull String messageText) {
-//        if (collectedInfo.isOnTheFly() && !collectedInfo.getProject().isDisposed()) {
-//            final QualityToolValidationInspection inspection = collectedInfo.getInspection();
-//            String text = messageText.replace("\n", "<br>") + (StringUtil.endsWith(messageText, "</a>") ? " or " : "<br>") + "<a href='disable'>Disable inspection</a>";
-//            NotificationListener listener = new NotificationListener() {
-//                public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-//                    String description = event.getDescription();
-//                    Project project = collectedInfo.getProject();
-//                    if (!project.isDisposed()) {
-//                        if ("disable".equals(description)) {
-//                            InspectionProfileManager.getInstance(project).getCurrentProfile().setToolEnabled(inspection.getID(), false);
-//                            this.showInfoNotification(inspection.getDisplayName() + " was disabled.");
-//                        } else if ("update".equals(description)) {
-//                            PhpInterpreter interpreter = PhpInterpretersManagerImpl.getInstance(project).findInterpreterById(collectedInfo.getInterpreterId());
-//                            if (interpreter == null) {
-//                                this.showWarningNotification(PhpBundle.message("quality.tool.configuration.interpreter.is.undefined", new Object[]{inspection.getToolName()}));
-//                                return;
-//                            }
-//
-//                            try {
-//                                PhpSdkHelpersManager.getHelpersManager(interpreter.getPhpSdkAdditionalData()).update(project, (JComponent)null);
-//                                this.showInfoNotification(PhpBundle.message("quality.tool.configuration.interpreter.was.reloaded", new Object[0]));
-//                            } catch (Exception var7) {
-//                                this.showWarningNotification(var7.getMessage());
-//                                QualityToolAnnotator.LOG.warn(var7);
-//                            }
-//                        }
-//                    }
-//
-//                }
-//
-//                private void showWarningNotification(@NotNull String warning) {
-//                    Notifications.Bus.notify(new Notification("PHP External Quality Tools", inspection.getToolName(), warning, NotificationType.WARNING));
-//                }
-//
-//                private void showInfoNotification(@NotNull String info) {
-//                    Notifications.Bus.notify(new Notification("PHP External Quality Tools", inspection.getToolName(), info, NotificationType.INFORMATION));
-//                }
-//            };
-//            showProcessErrorMessage(inspection, text, listener);
-//        } else {
-//            LOG.warn(messageText);
-//        }
-//    }
-
     @Override
     public boolean isGraphNeeded() {
         return false;
-    }
-
-    @Override
-    public boolean isEnabledByDefault() {
-        return super.isEnabledByDefault();
     }
 
     @Override
@@ -245,10 +181,8 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
 
     public final QualityToolAnnotatorInfo collectAnnotatorInfo(@NotNull PsiFile file) {
         InspectionProfile inspectionProfile = InspectionProjectProfileManager.getInstance(file.getProject()).getCurrentProfile();
-        // not sure if shortName would work
-        // TODO: check it
-        String id = this.getShortName();
-        GlobalInspectionToolWrapper globalInspectionToolWrapper = (GlobalInspectionToolWrapper)inspectionProfile.getInspectionTool(id, file);
+        GlobalInspectionToolWrapper globalInspectionToolWrapper
+                = (GlobalInspectionToolWrapper)inspectionProfile.getInspectionTool(this.getShortName(), file);
         if (globalInspectionToolWrapper != null) {
             GlobalInspectionTool tool = globalInspectionToolWrapper.getTool();
             if (!this.isFileSuitable(file)) {
@@ -268,7 +202,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                         }
                     }
 
-                    return this.createAnnotatorInfo(file, myQualityValidationInspection, project, configuration);
+                    return this.createAnnotatorInfo(file, myValidationInspection, project, configuration);
                 } else {
                     return null;
                 }
@@ -278,12 +212,58 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         }
     }
 
-    protected boolean isFileSuitable(@NotNull PsiFile file) {
-        return file instanceof PhpFile && file.getViewProvider().getBaseLanguage() == PhpLanguage.INSTANCE && file.getContext() == null;
+    private boolean isFileSuitable(@NotNull PsiFile file) {
+        return file instanceof PhpFile && file.getViewProvider().getBaseLanguage() == PhpLanguage.INSTANCE
+                && file.getContext() == null;
     }
 
     @NotNull
-    protected QualityToolAnnotatorInfo createAnnotatorInfo(@NotNull PsiFile file, QualityToolValidationInspection tool, Project project, QualityToolConfiguration configuration) {
+    private QualityToolAnnotatorInfo createAnnotatorInfo(@NotNull PsiFile file, QualityToolValidationInspection tool,
+                                                           Project project, QualityToolConfiguration configuration) {
         return new QualityToolAnnotatorInfo(file, tool, project, configuration, false);
+    }
+
+    private static String toPresentableLocation(@NotNull QualityToolAnnotatorInfo collectedInfo) {
+        String interpreterId = collectedInfo.getInterpreterId();
+        if (StringUtil.isNotEmpty(interpreterId)) {
+            Project project = collectedInfo.getProject();
+            if (!project.isDisposed()) {
+                PhpInterpreter interpreter = PhpInterpretersManagerImpl.getInstance(project).findInterpreterById(interpreterId);
+                if (interpreter != null) {
+                    return interpreter.getPhpSdkAdditionalData().toPresentablePath();
+                }
+            }
+        }
+
+        return "local";
+    }
+
+    private static void logWarning(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo collectedInfo) {
+        if (collectedInfo == null) {
+            LOG.warn(prefix + ": " + message);
+            return;
+        }
+        String formattedPrefix = prefix + " for '" + collectedInfo.getOriginalFile().getPath() + "' on " + toPresentableLocation(collectedInfo);
+        LOG.warn(formattedPrefix + ": " + message);
+    }
+
+    private static void logError(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo collectedInfo) {
+        if (collectedInfo == null) {
+            LOG.error(prefix + ": " + message);
+            return;
+        }
+        String formattedPrefix = prefix + " for '" + collectedInfo.getOriginalFile().getPath() + "' on " + toPresentableLocation(collectedInfo);
+        LOG.error(formattedPrefix + ": " + message);
+    }
+
+    private static void showInfo(@NotNull String title, @NotNull String prefix, @NotNull String message,
+                                 @NotNull NotificationType type, @Nullable QualityToolAnnotatorInfo annotatorInfo) {
+        Notifications.Bus.notify(new Notification(GROUP_ID, title, prefix + ": " + message, type, null));
+        switch (type) {
+            case ERROR:
+                logError(prefix, message, annotatorInfo);
+            case WARNING:
+                logWarning(prefix, message, annotatorInfo);
+        }
     }
 }
