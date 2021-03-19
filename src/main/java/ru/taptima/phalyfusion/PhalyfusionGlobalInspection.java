@@ -14,6 +14,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.profile.codeInspection.InspectionProjectProfileManager;
@@ -33,8 +34,11 @@ import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import ru.taptima.phalyfusion.issues.IssueCacheManager;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
+    private static final int MAX_WINDOWS_CMD_LENGTH = 8192;
+
     private static final String GROUP_ID = "PHP External Quality Tools";
     private static final Logger LOG = Logger.getInstance(PhalyfusionGlobalInspection.class);
 
@@ -56,7 +60,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                 public void visitFile(@NotNull PsiFile file) {
                     if (!(file instanceof PsiCompiledElement)) {
                         final VirtualFile virtualFile = file.getVirtualFile();
-                        if (virtualFile != null) {
+                        if (virtualFile != null && virtualFile.isValid()) {
                             filesSet.add(file);
                         }
                     }
@@ -65,62 +69,119 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
 
             PhalyfusionBlackList blackList = PhalyfusionBlackList.getInstance(scope.getProject());
 
-            PsiFile[] files = filesSet.stream().filter(psiFile ->
-                    isFileSuitable(psiFile) && !blackList.containsFile(psiFile.getVirtualFile())).toArray(PsiFile[]::new);
+            PsiFile[] psiFiles = filesSet.stream().filter(psiFile -> isFileSuitable(psiFile, blackList))
+                    .toArray(PsiFile[]::new);
 
-            if (files.length == 0) {
+            if (psiFiles.length == 0) {
                 showInfo(getDisplayName(), "Phalyfusion did not run", "No files to analyse",
                         NotificationType.INFORMATION, null);
                 return;
             }
 
-            QualityToolAnnotatorInfo annotatorInfo = collectAnnotatorInfo(files[0]);
+            QualityToolAnnotatorInfo annotatorInfo = collectAnnotatorInfo(psiFiles[0]);
             if (annotatorInfo == null) {
                 showInfo(getDisplayName(), "Phalyfusion did not run", "Can not get annotatorInfo", NotificationType.ERROR, null);
                 return;
             }
+
             QualityToolMessageProcessor messageProcessor = new PhalyfusionMessageProcessor(annotatorInfo);
-            String id = annotatorInfo.getInterpreterId();
-            PhpSdkAdditionalData sdkData
-                    = StringUtil.isEmpty(id) ? null : PhpInterpretersManagerImpl.getInstance(annotatorInfo.getProject()).findInterpreterDataById(id);
-            PhpSdkFileTransfer transfer = PhpSdkFileTransfer.getSdkFileTransfer(sdkData);
+            PhpSdkFileTransfer transfer = getPhpSdkFileTransfer(annotatorInfo);
 
-            try {
-                this.runTool(messageProcessor, annotatorInfo, transfer, files);
-            } catch (ExecutionException e) {
-                showInfo(getDisplayName(), "Can not execute quality tool", e.getMessage(), NotificationType.ERROR, annotatorInfo);
-            } finally {
-                try {
-                    removeTempFile(annotatorInfo, transfer);
-                } catch (ExecutionException e) {
-                    logWarning("Can not remove temporary file", e.getMessage(), annotatorInfo);
-                }
-            }
+            splitRunTool(psiFiles, annotatorInfo, messageProcessor, transfer);
 
-            PsiManager psiManager = PsiManager.getInstance(scope.getProject());
-
-            for (QualityToolMessage message : messageProcessor.getMessages()) {
-                PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
-                HighlightInfoType highlightInfoType = HighlightInfoType.ERROR;
-                switch (phalyfusionMessage.getSeverity()) {
-                    case WARNING:
-                        highlightInfoType = HighlightInfoType.WARNING;
-                        break;
-                    case INTERNAL_ERROR:
-                        showInfo(getDisplayName(), "Internal error", phalyfusionMessage.getMessageText(), NotificationType.ERROR, annotatorInfo);
-                        continue;
-                }
-
-                HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText())
-                        .range(phalyfusionMessage.getTextRange()).create();
-
-                GlobalInspectionUtil.createProblem(Objects.requireNonNull(psiManager.findFile(phalyfusionMessage.getFile())),
-                        Objects.requireNonNull(highlightInfo), phalyfusionMessage.getTextRange(), () -> "Quality Tool Error",
-                        InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
-            }
+            processMessages(globalContext, annotatorInfo, messageProcessor, psiFiles, problemDescriptionsProcessor);
         } catch (Exception e) {
             showInfo(getDisplayName(), "Exception during Phalyfusion run", e.getMessage(), NotificationType.ERROR, null);
         }
+    }
+
+    private void processMessages(@NotNull GlobalInspectionContext globalContext, @NotNull QualityToolAnnotatorInfo annotatorInfo,
+                                 @NotNull QualityToolMessageProcessor messageProcessor, @NotNull PsiFile[] psiFiles,
+                                 @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
+        PsiManager psiManager = PsiManager.getInstance(globalContext.getProject());
+
+        Set<VirtualFile> initialFileSet = Arrays.stream(psiFiles).map(PsiFile::getVirtualFile).collect(Collectors.toSet());
+
+        for (QualityToolMessage message : messageProcessor.getMessages()) {
+            HighlightInfoType highlightInfoType = HighlightInfoType.ERROR;
+            switch (message.getSeverity()) {
+                case WARNING:
+                    highlightInfoType = HighlightInfoType.WARNING;
+                    break;
+                case INTERNAL_ERROR:
+                    showInfo(getDisplayName(), "Internal error", message.getMessageText(), NotificationType.ERROR, annotatorInfo);
+                    continue;
+            }
+
+            PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
+            if (!initialFileSet.contains(phalyfusionMessage.getFile())) {
+                continue;
+            }
+
+            var psiFile = psiManager.findFile(phalyfusionMessage.getFile());
+            if (psiFile == null) {
+                logError("No PSI file", phalyfusionMessage.getFile().getPath(), null);
+            }
+
+            HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText())
+                    .range(phalyfusionMessage.getTextRange()).create();
+
+            GlobalInspectionUtil.createProblem(Objects.requireNonNull(psiManager.findFile(phalyfusionMessage.getFile())),
+                    Objects.requireNonNull(highlightInfo), phalyfusionMessage.getTextRange(), () -> "Quality Tool Error",
+                    InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
+        }
+    }
+
+    private void splitRunTool(@NotNull PsiFile[] psiFiles, @NotNull QualityToolAnnotatorInfo annotatorInfo,
+                              @NotNull QualityToolMessageProcessor messageProcessor, @NotNull PhpSdkFileTransfer transfer) {
+        if (!SystemInfo.isWindows) {
+            tryRunTool(annotatorInfo, messageProcessor, transfer, psiFiles);
+            return;
+        }
+
+        logWarning("Windows OS detected, splitting tasks", "", null);
+
+        int curFileIdx = 0;
+        while (curFileIdx < psiFiles.length) {
+            var curFilesList = new ArrayList<PsiFile>();
+            int totalLen = 0;
+            while (curFileIdx < psiFiles.length
+                    && totalLen + psiFiles[curFileIdx].getVirtualFile().getPath().length() < MAX_WINDOWS_CMD_LENGTH - 300) {
+                curFilesList.add(psiFiles[curFileIdx]);
+                totalLen += psiFiles[curFileIdx].getVirtualFile().getPath().length();
+                curFileIdx++;
+            }
+
+            if (!tryRunTool(annotatorInfo, messageProcessor, transfer, curFilesList.toArray(PsiFile[]::new))) {
+                break;
+            }
+        }
+    }
+
+    private boolean tryRunTool(@NotNull QualityToolAnnotatorInfo annotatorInfo, @NotNull QualityToolMessageProcessor messageProcessor,
+                               @NotNull PhpSdkFileTransfer transfer, @NotNull PsiFile[] files) {
+        boolean isExecutionException = true;
+        try {
+            this.runTool(messageProcessor, annotatorInfo, transfer, files);
+        } catch (ExecutionException e) {
+            isExecutionException = false;
+            showInfo(getDisplayName(), "Can not execute quality tool", e.getMessage(), NotificationType.ERROR, annotatorInfo);
+        } finally {
+            try {
+                removeTempFile(annotatorInfo, transfer);
+            } catch (ExecutionException e) {
+                isExecutionException = false;
+                logWarning("Can not remove temporary file", e.getMessage(), annotatorInfo);
+            }
+        }
+        return isExecutionException;
+    }
+
+    private PhpSdkFileTransfer getPhpSdkFileTransfer(@NotNull QualityToolAnnotatorInfo annotatorInfo) {
+        String id = annotatorInfo.getInterpreterId();
+        PhpSdkAdditionalData sdkData
+                = StringUtil.isEmpty(id) ? null : PhpInterpretersManagerImpl.getInstance(annotatorInfo.getProject()).findInterpreterDataById(id);
+        return PhpSdkFileTransfer.getSdkFileTransfer(sdkData);
     }
 
     private static void removeTempFile(@NotNull QualityToolAnnotatorInfo collectedInfo, @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
@@ -134,10 +195,10 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                          PsiFile[] files)
             throws ExecutionException {
         IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
-        String[] filesPaths = Arrays.stream(files).map((PsiFile file) -> file.getVirtualFile().getPath()).toArray(String[]::new);
+        String[] filesPaths = Arrays.stream(files)
+                .map(psiFile -> psiFile.getVirtualFile().getPath()).toArray(String[]::new);
         List<String> params = getCommandLineOptions(filesPaths);
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
-
         QualityToolProcessCreator.runToolProcess(annotatorInfo, null, messageProcessor, workingDir, transfer, params);
         if (messageProcessor.getInternalErrorMessage() != null) {
             if (annotatorInfo.isOnTheFly()) {
@@ -166,7 +227,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         options.add("analyse");
         options.add("--format=checkstyle");
         options.addAll(Arrays.asList(filePaths));
-
         return options;
     }
 
@@ -185,14 +245,13 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                 = (GlobalInspectionToolWrapper)inspectionProfile.getInspectionTool(this.getShortName(), file);
         if (globalInspectionToolWrapper != null) {
             GlobalInspectionTool tool = globalInspectionToolWrapper.getTool();
-            if (!this.isFileSuitable(file)) {
-                return null;
-            } else if (SuppressionUtil.inspectionResultSuppressed(file, tool)) {
+            if (SuppressionUtil.inspectionResultSuppressed(file, tool)) {
                 return null;
             } else {
                 Project project = file.getProject();
                 QualityToolConfiguration configuration = this.getConfiguration(project);
                 if (configuration != null && !StringUtil.isEmpty(configuration.getToolPath())) {
+                    configuration.setTimeout(600000);
                     if (StringUtil.isNotEmpty(configuration.getInterpreterId())) {
                         String interpreterId = configuration.getInterpreterId();
                         PhpSdkAdditionalData data = PhpInterpretersManagerImpl.getInstance(project).findInterpreterDataById(interpreterId);
@@ -212,9 +271,10 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         }
     }
 
-    private boolean isFileSuitable(@NotNull PsiFile file) {
+    private boolean isFileSuitable(@NotNull PsiFile file, @NotNull PhalyfusionBlackList blackList) {
         return file instanceof PhpFile && file.getViewProvider().getBaseLanguage() == PhpLanguage.INSTANCE
-                && file.getContext() == null;
+                && file.getContext() == null && !blackList.containsFile(file.getVirtualFile())
+                && file.getVirtualFile().isValid();
     }
 
     @NotNull

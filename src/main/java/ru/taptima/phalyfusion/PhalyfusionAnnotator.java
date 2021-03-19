@@ -38,13 +38,12 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
 
     protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo,
                            @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
-        //List<String> params = getCommandLineOptions(annotatorInfo.getFilePath());
         List<String> params = getCommandLineOptions(PathUtil.toSystemIndependentName(annotatorInfo.getOriginalFile().getPath()));
         IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
-        //annotatorInfo.getTimeout()
         if (annotatorInfo.isOnTheFly()) {
             if (messageProcessor instanceof PhalyfusionMessageProcessor) {
-                ((PhalyfusionMessageProcessor)messageProcessor).loadFromCache(issuesCache.getCachedResultForFile(annotatorInfo.getOriginalFile()));
+                ((PhalyfusionMessageProcessor)messageProcessor)
+                        .loadFromCache(issuesCache.getCachedResultForFile(annotatorInfo.getOriginalFile()), annotatorInfo);
             }
             return;
         }

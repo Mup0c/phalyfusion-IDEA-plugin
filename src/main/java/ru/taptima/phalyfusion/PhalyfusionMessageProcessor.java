@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.jetbrains.php.tools.quality.QualityToolAnnotator;
 import com.jetbrains.php.tools.quality.QualityToolAnnotatorInfo;
 import com.jetbrains.php.tools.quality.QualityToolMessage;
 import com.jetbrains.php.tools.quality.QualityToolXmlMessageProcessor;
@@ -79,9 +80,14 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         return line.indexOf("/>");
     }
 
-    public void loadFromCache(@NotNull Collection<QualityToolMessage> cachedMessages) {
+    public void loadFromCache(@NotNull Collection<QualityToolMessage> cachedMessages, QualityToolAnnotatorInfo annotatorInfo) {
         for (QualityToolMessage message : cachedMessages) {
-            addMessage(message);
+            if (message instanceof PhalyfusionMessage) {
+                PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
+                if (phalyfusionMessage.getFile().equals(annotatorInfo.getOriginalFile())) {
+                    addMessage(message);
+                }
+            }
         }
     }
 
@@ -183,6 +189,10 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     @Override
     public PsiFile getFile() {
+        if (myCurFile == null) {
+            return myFile;
+        }
+
         return PsiManager.getInstance(myFile.getProject()).findFile(myCurFile);
     }
 }
