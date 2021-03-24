@@ -51,4 +51,10 @@ public class IssueCacheManager {
 
         cachedIssueMap.put(file, new IssueCacheEntry(issues));
     }
+
+    public synchronized void setCachedResults(@NotNull Map<VirtualFile, List<QualityToolMessage>> issues) {
+        for (var entry : issues.entrySet()) {
+            setCachedResultsForFile(entry.getKey(), entry.getValue());
+        }
+    }
 }

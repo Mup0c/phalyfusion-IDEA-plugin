@@ -1,14 +1,11 @@
 <html>
 <body>
-<p>Reports static code problems detected by analysers combined by Phalyfusion via Phalyfusion executable file</p>
-<!-- tooltip end -->
+<p>Highlights static code problems detected by Phalyfusion Global Validation.</p>
 <p>
-    The inspection requires Phalyfusion to be properly installed and set up in the IDE under Settings/Preferences | Languages & Frameworks | PHP | Quality Tools | Phalyfusion.
-    It is recommended to install Phalyfusion as a Composer dependency.
+    This inspection only highlights problems detected by Phalyfusion Global Validation in on-fly mode.
     <br>
-    Phalyfusion needs to be configured fully via phalyfusion.neon. Analysers used by Phalyfusion must be configured properly either.
-    <br>
-    This inspection will run Phalyfusion as ./phalyfusion analyse ANALYSED_FILE. So make sure that all analysers used by Phalyfusion configured properly to run analysis on separate files of your project.
+    Switch settings "Launch Phalyfusion tool in on-fly mode" to make this inspection launch Phalyfusion tool separately
+    (may cause lags)
 </p>
 </body>
 </html>

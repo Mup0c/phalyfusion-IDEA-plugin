@@ -18,6 +18,7 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
     private String myStandards = "";
     private int myMaxMessagesPerFile = 100;
     private int myTimeoutMs = 30000;
+    private boolean isOnFlyModeEnabled = false;
 
     public PhalyfusionConfiguration() {
     }
@@ -29,6 +30,14 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
 
     public void setToolPath(String toolPath) {
         this.myPhalyfusionPath = toolPath;
+    }
+
+    public boolean getOnFlyMode() {
+        return isOnFlyModeEnabled;
+    }
+
+    public void setOnFlyMode(boolean val) {
+        isOnFlyModeEnabled = val;
     }
 
     @Attribute("tool_path")
@@ -105,6 +114,7 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
         settings.myStandards = this.myStandards;
         settings.myMaxMessagesPerFile = this.myMaxMessagesPerFile;
         settings.myTimeoutMs = this.myTimeoutMs;
+        settings.isOnFlyModeEnabled = this.isOnFlyModeEnabled;
     }
 
     public int compareTo(@NotNull QualityToolConfiguration o) {
@@ -112,8 +122,10 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
             return 1;
         } else if (StringUtil.equals(this.getPresentableName(null), "Local")) {
             return -1;
-        } else {
+        } else if (isOnFlyModeEnabled == ((PhalyfusionConfiguration) o).isOnFlyModeEnabled) {
             return StringUtil.equals(o.getPresentableName(null), "Local") ? 1 : StringUtil.compare(this.getPresentableName(null), o.getPresentableName(null), false);
+        } else {
+            return isOnFlyModeEnabled ? 1 : -1;
         }
     }
 }

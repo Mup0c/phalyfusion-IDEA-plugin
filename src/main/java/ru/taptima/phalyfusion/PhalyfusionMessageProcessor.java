@@ -39,7 +39,7 @@ import java.util.*;
  */
 public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor {
     private final HighlightDisplayLevel myWarningsHighlightLevel;
-    private final Set<String> lineMessages = new HashSet();
+    private final Set<String> lineMessages = new HashSet<>();
     private int myPrevLine = -1;
     private VirtualFile myCurFile = null;
     private boolean isFileTag = false;

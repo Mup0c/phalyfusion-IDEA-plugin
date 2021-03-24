@@ -102,6 +102,10 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
 
         Set<VirtualFile> initialFileSet = Arrays.stream(psiFiles).map(PsiFile::getVirtualFile).collect(Collectors.toSet());
 
+        IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
+
+        var messageMap = new HashMap<VirtualFile, List<QualityToolMessage>>();
+
         for (QualityToolMessage message : messageProcessor.getMessages()) {
             HighlightInfoType highlightInfoType = HighlightInfoType.ERROR;
             switch (message.getSeverity()) {
@@ -123,6 +127,12 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                 logError("No PSI file", phalyfusionMessage.getFile().getPath(), null);
             }
 
+            if (!messageMap.containsKey(phalyfusionMessage.getFile())) {
+                messageMap.put(phalyfusionMessage.getFile(), new ArrayList<>());
+            }
+
+            messageMap.get(phalyfusionMessage.getFile()).add(phalyfusionMessage);
+
             HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText())
                     .range(phalyfusionMessage.getTextRange()).create();
 
@@ -130,6 +140,8 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                     Objects.requireNonNull(highlightInfo), phalyfusionMessage.getTextRange(), () -> "Quality Tool Error",
                     InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
         }
+
+        issuesCache.setCachedResults(messageMap);
     }
 
     private void splitRunTool(@NotNull PsiFile[] psiFiles, @NotNull QualityToolAnnotatorInfo annotatorInfo,
@@ -138,8 +150,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
             tryRunTool(annotatorInfo, messageProcessor, transfer, psiFiles);
             return;
         }
-
-        logWarning("Windows OS detected, splitting tasks", "", null);
 
         int curFileIdx = 0;
         while (curFileIdx < psiFiles.length) {
@@ -194,32 +204,20 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     private void runTool(QualityToolMessageProcessor messageProcessor, QualityToolAnnotatorInfo annotatorInfo, PhpSdkFileTransfer transfer,
                          PsiFile[] files)
             throws ExecutionException {
-        IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
+
         String[] filesPaths = Arrays.stream(files)
                 .map(psiFile -> psiFile.getVirtualFile().getPath()).toArray(String[]::new);
         List<String> params = getCommandLineOptions(filesPaths);
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
         QualityToolProcessCreator.runToolProcess(annotatorInfo, null, messageProcessor, workingDir, transfer, params);
         if (messageProcessor.getInternalErrorMessage() != null) {
-            if (annotatorInfo.isOnTheFly()) {
-                String message = messageProcessor.getInternalErrorMessage().getMessageText();
-                QualityToolAnnotator.showProcessErrorMessage(annotatorInfo, message);
-            }
-
             messageProcessor.setFatalError();
         }
-
-        issuesCache.setCachedResultsForFile(annotatorInfo.getOriginalFile(), messageProcessor.getMessages());
     }
 
     @Override
     public boolean isGraphNeeded() {
         return false;
-    }
-
-    @Override
-    public @Nullable LocalInspectionTool getSharedLocalInspectionTool() {
-        return myValidationInspection;
     }
 
     private List<String> getCommandLineOptions(String[] filePaths) {
@@ -251,7 +249,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                 Project project = file.getProject();
                 QualityToolConfiguration configuration = this.getConfiguration(project);
                 if (configuration != null && !StringUtil.isEmpty(configuration.getToolPath())) {
-                    configuration.setTimeout(600000);
                     if (StringUtil.isNotEmpty(configuration.getInterpreterId())) {
                         String interpreterId = configuration.getInterpreterId();
                         PhpSdkAdditionalData data = PhpInterpretersManagerImpl.getInstance(project).findInterpreterDataById(interpreterId);
@@ -281,6 +278,11 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     private QualityToolAnnotatorInfo createAnnotatorInfo(@NotNull PsiFile file, QualityToolValidationInspection tool,
                                                            Project project, QualityToolConfiguration configuration) {
         return new QualityToolAnnotatorInfo(file, tool, project, configuration, false);
+    }
+
+    @Override
+    public @Nullable LocalInspectionTool getSharedLocalInspectionTool() {
+        return myValidationInspection;
     }
 
     private static String toPresentableLocation(@NotNull QualityToolAnnotatorInfo collectedInfo) {

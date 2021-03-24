@@ -12,6 +12,8 @@ import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+
 public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm implements Configurable.NoScroll {
     public PhalyfusionConfigurable(@NotNull Project project) {
         super(project);
@@ -38,6 +40,11 @@ public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm 
     @NotNull
     protected String getInspectionShortName() {
         return new PhalyfusionValidationInspection().getShortName();
+    }
+
+    @Override
+    public @NotNull JComponent getComponent() {
+        return super.getComponent();
     }
 
     @NotNull

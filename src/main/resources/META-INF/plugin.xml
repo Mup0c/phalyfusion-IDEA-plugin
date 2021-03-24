@@ -54,25 +54,18 @@
         <projectService serviceImplementation="ru.taptima.phalyfusion.issues.IssueCacheManager"/>
         <localInspection language="PHP"
                          shortName="PhalyfusionValidation"
-                         displayName="Phalyfusion validation"
+                         displayName="Phalyfusion on-fly validation"
                          groupPath="PHP"
                          groupName="Quality tools"
-                         enabledByDefault="false"
+                         enabledByDefault="true"
                          level="WEAK WARNING"
-                         cleanupTool="true"
+                         cleanupTool="false"
                          implementationClass="ru.taptima.phalyfusion.PhalyfusionValidationInspection"/>
-<!--        <localInspection-->
-<!--                language="PHP"-->
-<!--                shortName="PhalyfusionHighlighting"-->
-<!--                displayName="Phalyfusion highlighting"-->
-<!--                groupPath="PHP"-->
-<!--                groupName="Quality tools"-->
-<!--                unfair="true"-->
-<!--                implementationClass="ru.taptima.phalyfusion.PhalyfusionHighlightingInspection"/>-->
         <globalInspection
                 language="PHP"
                 shortName="PhalyfusionGlobal"
-                displayName="Phalyfusion global"
+                displayName="Phalyfusion global validation"
+                enabledByDefault="true"
                 groupPath="PHP"
                 groupName="Quality tools"
                 cleanupTool="true"

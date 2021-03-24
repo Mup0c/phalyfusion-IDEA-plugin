@@ -8,6 +8,7 @@ import com.intellij.util.PathUtil;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
 import com.jetbrains.php.tools.quality.*;
 import ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +19,7 @@ import java.util.List;
 
 public class PhalyfusionAnnotator extends QualityToolAnnotator {
     public static final PhalyfusionAnnotator INSTANCE = new PhalyfusionAnnotator();
+    private final PhalyfusionValidationInspection myInspection = new PhalyfusionValidationInspection();
 
     @NotNull
     @Override
@@ -28,7 +30,7 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
     @NotNull
     @Override
     protected String getInspectionId() {
-        return (new PhalyfusionValidationInspection()).getID();
+        return myInspection.getID();
     }
 
     @Override
@@ -38,15 +40,23 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
 
     protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo,
                            @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
+        // This inspection is only for on-fly mode. Batch inspections are provided with PhalyfusionGlobal
+        if (!annotatorInfo.isOnTheFly()) {
+            return;
+        }
+
+        PhalyfusionConfiguration configuration = (PhalyfusionConfiguration) getConfiguration(annotatorInfo.getProject(), myInspection);
         List<String> params = getCommandLineOptions(PathUtil.toSystemIndependentName(annotatorInfo.getOriginalFile().getPath()));
         IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
-        if (annotatorInfo.isOnTheFly()) {
+
+        if (configuration == null || !configuration.getOnFlyMode()) {
             if (messageProcessor instanceof PhalyfusionMessageProcessor) {
                 ((PhalyfusionMessageProcessor)messageProcessor)
                         .loadFromCache(issuesCache.getCachedResultForFile(annotatorInfo.getOriginalFile()), annotatorInfo);
             }
             return;
         }
+
         PhalyfusionBlackList blackList = PhalyfusionBlackList.getInstance(annotatorInfo.getProject());
 
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
@@ -81,9 +91,4 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
             return null;
         }
     }
-
-//    @Override
-//    public String getPairedBatchInspectionShortName() {
-//        return "PhalyfusionHighlighting";
-//    }
 }
