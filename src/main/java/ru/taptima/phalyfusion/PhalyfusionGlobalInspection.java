@@ -107,14 +107,10 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         var messageMap = new HashMap<VirtualFile, List<QualityToolMessage>>();
 
         for (QualityToolMessage message : messageProcessor.getMessages()) {
-            HighlightInfoType highlightInfoType = HighlightInfoType.ERROR;
-            switch (message.getSeverity()) {
-                case WARNING:
-                    highlightInfoType = HighlightInfoType.WARNING;
-                    break;
-                case INTERNAL_ERROR:
-                    showInfo(getDisplayName(), "Internal error", message.getMessageText(), NotificationType.ERROR, annotatorInfo);
-                    continue;
+            HighlightInfoType highlightInfoType = HighlightInfoType.WARNING;
+            if (message.getSeverity() == QualityToolMessage.Severity.INTERNAL_ERROR) {
+                showInfo(getDisplayName(), "Internal error", message.getMessageText(), NotificationType.ERROR, annotatorInfo);
+                continue;
             }
 
             PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
