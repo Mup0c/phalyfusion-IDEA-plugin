@@ -91,7 +91,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
             splitRunTool(psiFiles, messageProcessor, annotatorInfo);
             processMessages(globalContext, annotatorInfo, messageProcessor, psiFiles, problemDescriptionsProcessor);
         } catch (QualityToolExecutionException | QualityToolValidationException e) {
-            showInfo(getDisplayName(), "Exception during Phalyfusion run", e.getMessage(), NotificationType.ERROR, null);
+            showInfo(getDisplayName(), "Exception during Phalyfusion run", e.getMessage(), NotificationType.WARNING, null);
             problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getRefProject(),
                     new CommonProblemDescriptorImpl(null, e.getMessage()));
         }

@@ -60,6 +60,7 @@
                          enabledByDefault="true"
                          level="WEAK WARNING"
                          cleanupTool="false"
+                         unfair="true"
                          implementationClass="ru.taptima.phalyfusion.PhalyfusionValidationInspection"/>
         <globalInspection
                 language="PHP"
@@ -69,7 +70,7 @@
                 groupPath="PHP"
                 groupName="Quality tools"
                 cleanupTool="true"
-                level="WEAK WARNING"
+                level="ERROR"
                 implementationClass="ru.taptima.phalyfusion.PhalyfusionGlobalInspection"/>
     </extensions>
 
