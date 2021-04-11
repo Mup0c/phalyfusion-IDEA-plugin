@@ -115,8 +115,10 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         return new PhalyfusionConfigurable(project);
     }
 
+
+
     public boolean processStdErrMessages() {
-        return false;
+        return true;
     }
 
     /**
@@ -185,6 +187,16 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
                 this.addMessage(qualityToolMessage);
             }
         }
+    }
+
+    @Override
+    protected void addMessage(QualityToolMessage message) {
+        if (message.isInternalError()) {
+            message = new QualityToolMessage(this, message.getLineNum(), QualityToolMessage.Severity.INTERNAL_ERROR,
+                    message.getMessageText().substring(0, message.getMessageText().indexOf('\n')));
+        }
+
+        super.addMessage(message);
     }
 
     @Override
