@@ -4,7 +4,10 @@ import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiFile;
+import com.jetbrains.php.composer.ComposerConfigUtils;
+import com.jetbrains.php.composer.ComposerDataService;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
 import com.jetbrains.php.lang.PhpLanguage;
 import com.jetbrains.php.lang.psi.PhpFile;
@@ -16,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.taptima.phalyfusion.issues.IssueCacheManager;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +57,16 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
 
         List<String> params = getCommandLineOptions(filesPaths);
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
+
+        try {
+            synchronized (FILE_LOCK) {
+                checkNeonConfiguration(annotatorInfo.getProject(), annotatorInfo);
+            }
+        } catch (IOException e) {
+            logWarning(annotatorInfo, "Failed to create phalyfusion configuration file", e);
+        }
+
+
         QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, params);
 
         if (messageProcessor.getInternalErrorMessage() != null) {
@@ -62,6 +76,88 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
             }
 
             messageProcessor.setFatalError();
+        }
+    }
+
+    private static class CodeAnalyzer {
+        public CodeAnalyzer(String name, String fullName) {
+            this.name = name;
+            this.fullName = fullName;
+        }
+
+        private final String name;
+        private final String fullName;
+
+        public String getName() {
+            return name;
+        }
+
+        public String getFullName() {
+            return fullName;
+        }
+    }
+
+    private static final ArrayList<CodeAnalyzer> CODE_ANALYZERS = new ArrayList<>(Arrays.asList(
+            new CodeAnalyzer("phpstan", "phpstan/phpstan"),
+            new CodeAnalyzer("phan", "phan/phan"),
+            new CodeAnalyzer("psalm", "vimeo/psalm"),
+            new CodeAnalyzer("phpmd", "phpmd/phpmd"),
+            new CodeAnalyzer("php-cs-fixer", "friendsofphp/php-cs-fixer")));
+
+    private final static Object FILE_LOCK = new Object();
+
+    private static void checkNeonConfiguration(@NotNull Project project, @NotNull QualityToolAnnotatorInfo annotatorInfo) throws IOException {
+        File neonConfig = new File(project.getBasePath() + "/" + "phalyfusion.neon");
+        if (neonConfig.isFile()) {
+            return;
+        }
+
+        var config= ComposerDataService.getInstance(project).getConfigFile();
+        if (config == null) {
+            return;
+        }
+
+        var vendors = ComposerConfigUtils.getVendorAndBinDirs(config);
+        if (vendors == null) {
+            return;
+        }
+
+        var packagesList = ComposerConfigUtils.getInstalledPackagesFromConfig(config);
+        List<Pair<CodeAnalyzer, String>> existingAnalysers = new ArrayList<>();
+        for (var pkg : packagesList) {
+            var res = CODE_ANALYZERS.stream().filter((it) -> it.fullName.equals(pkg.getName())).findFirst();
+
+            if (res.isEmpty()) {
+                continue;
+            }
+
+            var analyserPath = project.getBasePath() + "/" + vendors.second + "/" + res.get().name;
+
+            if (!new File(analyserPath).isFile()) {
+                logWarning(annotatorInfo, "Can not find " + res.get().name + " package bin", null);
+                continue;
+            }
+
+            existingAnalysers.add(new Pair<>(res.get(), analyserPath));
+        }
+
+        createNeonConfiguration(neonConfig, existingAnalysers);
+    }
+
+    private static void createNeonConfiguration(@NotNull File neonFile, @NotNull List<Pair<CodeAnalyzer, String>> analyzers) throws IOException {
+        try (var writer = new BufferedWriter(new FileWriter(neonFile))) {
+            writer.write("plugins:\n");
+            String indent = "    ";
+            writer.write(indent + "usePlugins:\n");
+            for (var analyser : analyzers) {
+                writer.write(indent + indent + "- " + analyser.first.name + "\n");
+            }
+
+            writer.write(indent + "runCommands:\n");
+
+            for (var analyser : analyzers) {
+                writer.write(indent + indent + analyser.first.name + ": \"" + analyser.second + "\"\n");
+            }
         }
     }
 
