@@ -1,7 +1,11 @@
 package ru.taptima.phalyfusion.configuration;
 
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.xmlb.XmlSerializer;
+import com.jetbrains.php.composer.ComposerConfigUtils;
+import com.jetbrains.php.composer.ComposerDataService;
 import com.jetbrains.php.tools.quality.QualityToolConfigurationBaseManager;
 import com.jetbrains.php.tools.quality.QualityToolConfigurationProvider;
 import org.jdom.Element;
@@ -18,7 +22,29 @@ public class PhalyfusionConfigurationBaseManager extends QualityToolConfiguratio
 
     @NotNull
     protected PhalyfusionConfiguration createLocalSettings() {
-        return new PhalyfusionConfiguration();
+        var phalyfusionConfig = new PhalyfusionConfiguration();
+
+        var projects = ProjectManager.getInstance().getOpenProjects();
+        for (var project : projects) {
+            var config= ComposerDataService.getInstance(project).getConfigFile();
+            if (config == null) {
+                continue;
+            }
+
+            var vendors = ComposerConfigUtils.getVendorAndBinDirs(config);
+            if (vendors == null) {
+                continue;
+            }
+
+            var packagesList = ComposerConfigUtils.getInstalledPackagesFromConfig(config);
+            if (packagesList.stream().anyMatch(it -> it.getName().equals("taptima/phalyfusion"))) {
+                var phalyfusionPath = vendors.second + "/phalyfusion" + (SystemInfo.isWindows ? ".bat" : "");
+                phalyfusionConfig.setToolPath(config.getParent().getPath() + "/" + phalyfusionPath);
+                break;
+            }
+        }
+
+        return phalyfusionConfig;
     }
 
     @NotNull

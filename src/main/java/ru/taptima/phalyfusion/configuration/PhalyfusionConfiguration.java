@@ -20,8 +20,7 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
     private int myTimeoutMs = 30000;
     private boolean isOnFlyModeEnabled = false;
 
-    public PhalyfusionConfiguration() {
-    }
+    public PhalyfusionConfiguration() { }
 
     @Transient
     public String getToolPath() {
