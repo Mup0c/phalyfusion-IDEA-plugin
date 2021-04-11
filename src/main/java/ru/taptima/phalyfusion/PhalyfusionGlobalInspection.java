@@ -14,6 +14,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -21,7 +22,6 @@ import com.intellij.profile.codeInspection.InspectionProjectProfileManager;
 import com.intellij.psi.PsiCompiledElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
 import com.jetbrains.php.config.interpreters.*;
 import com.jetbrains.php.run.remote.PhpRemoteInterpreterManager;
 import com.jetbrains.php.tools.quality.*;
@@ -84,6 +84,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
             QualityToolAnnotatorInfo annotatorInfo = collectAnnotatorInfo(psiFiles[0], configuration);
 
             if (annotatorInfo == null) {
+                logError("Phalyfusion execution exception", "Problems during collection of annotator info", null);
                 throw new QualityToolExecutionException("Problems during collection of annotator info");
             }
 
@@ -91,7 +92,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
             splitRunTool(psiFiles, messageProcessor, annotatorInfo);
             processMessages(globalContext, annotatorInfo, messageProcessor, psiFiles, problemDescriptionsProcessor);
         } catch (QualityToolExecutionException | QualityToolValidationException e) {
-            showInfo(getDisplayName(), "Exception during Phalyfusion run", e.getMessage(), NotificationType.WARNING, null);
+            showInfo(getDisplayName(), "Exception during Phalyfusion run", e.getMessage(), NotificationType.ERROR, null);
             problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getRefProject(),
                     new CommonProblemDescriptorImpl(null, e.getMessage()));
         }
@@ -100,41 +101,36 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     private void processMessages(@NotNull GlobalInspectionContext globalContext, @NotNull QualityToolAnnotatorInfo annotatorInfo,
                                  @NotNull QualityToolMessageProcessor messageProcessor, @NotNull PsiFile[] psiFiles,
                                  @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
-        PsiManager psiManager = PsiManager.getInstance(globalContext.getProject());
-
-        Set<VirtualFile> initialFileSet = Arrays.stream(psiFiles).map(PsiFile::getVirtualFile).collect(Collectors.toSet());
-
+        Map<VirtualFile, PsiFile> fileToPsi = Arrays.stream(psiFiles).map(it -> Pair.create(it.getVirtualFile(), it)).collect(Collectors.toMap(it -> it.first, it -> it.second));
         IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
-
         var messageMap = new HashMap<VirtualFile, List<QualityToolMessage>>();
 
         for (QualityToolMessage message : messageProcessor.getMessages()) {
             HighlightInfoType highlightInfoType = HighlightInfoType.WARNING;
             if (message.getSeverity() == QualityToolMessage.Severity.INTERNAL_ERROR) {
                 showInfo(getDisplayName(), "Internal error", message.getMessageText(), NotificationType.ERROR, annotatorInfo);
+                problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getRefProject(),
+                        new CommonProblemDescriptorImpl(null, message.getMessageText()));
                 continue;
             }
 
             PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
-            if (!initialFileSet.contains(phalyfusionMessage.getFile())) {
+            if (!fileToPsi.containsKey(phalyfusionMessage.getFile())) {
                 continue;
-            }
-
-            var psiFile = psiManager.findFile(phalyfusionMessage.getFile());
-            if (psiFile == null) {
-                logError("No PSI file", phalyfusionMessage.getFile().getPath(), null);
             }
 
             if (!messageMap.containsKey(phalyfusionMessage.getFile())) {
                 messageMap.put(phalyfusionMessage.getFile(), new ArrayList<>());
             }
 
+            var psiFile = fileToPsi.get(phalyfusionMessage.getFile());
+
             messageMap.get(phalyfusionMessage.getFile()).add(phalyfusionMessage);
 
             HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText())
                     .range(phalyfusionMessage.getTextRange()).create();
 
-            GlobalInspectionUtil.createProblem(Objects.requireNonNull(psiManager.findFile(phalyfusionMessage.getFile())),
+            GlobalInspectionUtil.createProblem(Objects.requireNonNull(psiFile),
                     Objects.requireNonNull(highlightInfo), phalyfusionMessage.getTextRange(), () -> "Quality Tool Error",
                     InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
         }
@@ -209,6 +205,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         InspectionProfile inspectionProfile = InspectionProjectProfileManager.getInstance(file.getProject()).getCurrentProfile();
         GlobalInspectionToolWrapper globalInspectionToolWrapper
                 = (GlobalInspectionToolWrapper)inspectionProfile.getInspectionTool(this.getShortName(), file);
+
         if (globalInspectionToolWrapper != null) {
             GlobalInspectionTool tool = globalInspectionToolWrapper.getTool();
             if (SuppressionUtil.inspectionResultSuppressed(file, tool)) {
@@ -283,11 +280,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     private static void showInfo(@NotNull String title, @NotNull String prefix, @NotNull String message,
                                  @NotNull NotificationType type, @Nullable QualityToolAnnotatorInfo annotatorInfo) {
         Notifications.Bus.notify(new Notification(GROUP_ID, title, prefix + ": " + message, type, null));
-        switch (type) {
-            case ERROR:
-                logError(prefix, message, annotatorInfo);
-            case WARNING:
-                logWarning(prefix, message, annotatorInfo);
-        }
+        logWarning(prefix, message, annotatorInfo);
     }
 }
