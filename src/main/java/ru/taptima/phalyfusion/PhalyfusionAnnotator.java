@@ -26,7 +26,6 @@ import java.util.List;
 
 public class PhalyfusionAnnotator extends QualityToolAnnotator {
     public static final PhalyfusionAnnotator INSTANCE = new PhalyfusionAnnotator();
-    private final PhalyfusionValidationInspection myInspection = new PhalyfusionValidationInspection();
 
     @NotNull
     @Override
@@ -37,7 +36,7 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
     @NotNull
     @Override
     protected String getInspectionId() {
-        return myInspection.getID();
+        return (new PhalyfusionValidationInspection()).getID();
     }
 
     @Override
@@ -182,7 +181,7 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
             return;
         }
 
-        PhalyfusionConfiguration configuration = (PhalyfusionConfiguration) getConfiguration(annotatorInfo.getProject(), myInspection);
+        PhalyfusionConfiguration configuration = (PhalyfusionConfiguration) getConfiguration(annotatorInfo.getProject(), annotatorInfo.getInspection());
         IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
 
         if (configuration == null || !configuration.getOnFlyMode()) {

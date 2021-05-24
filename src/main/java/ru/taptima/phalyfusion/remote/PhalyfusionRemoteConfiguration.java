@@ -41,6 +41,7 @@ public class PhalyfusionRemoteConfiguration extends PhalyfusionConfiguration imp
         return StringUtil.isEmpty(interpreterName) ? "Undefined interpreter" : "Interpreter: " + interpreterName;
     }
 
+    @NotNull
     public PhalyfusionRemoteConfiguration clone() {
         PhalyfusionRemoteConfiguration settings = new PhalyfusionRemoteConfiguration();
         settings.myInterpreterId = this.myInterpreterId;

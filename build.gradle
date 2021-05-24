@@ -4,7 +4,7 @@ plugins {
 }
 
 runIde {
-    //ideDirectory  '/Applications/PhpStorm.app/Contents'
+
 }
 
 group 'ru.taptima'

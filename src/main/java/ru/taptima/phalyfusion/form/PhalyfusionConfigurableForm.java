@@ -1,6 +1,5 @@
 package ru.taptima.phalyfusion.form;
 
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -13,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class PhalyfusionConfigurableForm<C extends PhalyfusionConfiguration> extends QualityToolConfigurableForm<C> {
     public PhalyfusionConfigurableForm(@NotNull Project project, @NotNull C configuration) {
@@ -91,7 +89,7 @@ public class PhalyfusionConfigurableForm<C extends PhalyfusionConfiguration> ext
         }
 
         @Override
-        public void apply() throws ConfigurationException {
+        public void apply() {
             myConfiguration.setOnFlyMode(onFlyModeBtn.isSelected());
         }
     }

@@ -218,7 +218,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                         String interpreterId = configuration.getInterpreterId();
                         PhpSdkAdditionalData data = PhpInterpretersManagerImpl.getInstance(project).findInterpreterDataById(interpreterId);
                         PhpRemoteInterpreterManager manager = PhpRemoteInterpreterManager.getInstance();
-                        if (manager != null && !manager.producesSshSdkCredentials(data)) {
+                        if (data != null && manager != null && !manager.producesSshSdkCredentials(data)) {
                             return null;
                         }
                     }

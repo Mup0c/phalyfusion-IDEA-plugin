@@ -102,6 +102,7 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
         return null;
     }
 
+    @NotNull
     public PhalyfusionConfiguration clone() {
         PhalyfusionConfiguration settings = new PhalyfusionConfiguration();
         this.clone(settings);

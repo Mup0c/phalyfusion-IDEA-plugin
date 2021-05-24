@@ -3,17 +3,19 @@ package ru.taptima.phalyfusion.issues;
 import com.jetbrains.php.tools.quality.QualityToolMessage;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class IssueCacheEntry {
     public IssueCacheEntry(@NotNull Collection<QualityToolMessage> issues) {
-        issuesCollection = issues;
+        issuesCollection = new ArrayList<>(issues);
         isValid = true;
     }
 
-    private Collection<QualityToolMessage> issuesCollection;
+    private List<QualityToolMessage> issuesCollection;
     private boolean isValid;
 
     public void updateIssues(@NotNull Collection<QualityToolMessage> issues) {
@@ -30,7 +32,7 @@ public class IssueCacheEntry {
     }
 
     @NotNull
-    public Collection<QualityToolMessage> getIssues() {
+    public List<QualityToolMessage> getIssues() {
         if (isValid) {
             return issuesCollection;
         }

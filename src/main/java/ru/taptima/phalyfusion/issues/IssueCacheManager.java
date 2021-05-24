@@ -29,13 +29,12 @@ public class IssueCacheManager {
                 }
             }
         });
-
     }
 
     private final Map<VirtualFile, IssueCacheEntry> cachedIssueMap;
 
     @NotNull
-    public synchronized Collection<QualityToolMessage> getCachedResultForFile(@NotNull VirtualFile file) {
+    public synchronized List<QualityToolMessage> getCachedResultForFile(@NotNull VirtualFile file) {
         if (cachedIssueMap.containsKey(file)) {
             return cachedIssueMap.get(file).getIssues();
         }

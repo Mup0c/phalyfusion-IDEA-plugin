@@ -9,7 +9,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
-import com.jetbrains.php.tools.quality.QualityToolAnnotator;
 import com.jetbrains.php.tools.quality.QualityToolAnnotatorInfo;
 import com.jetbrains.php.tools.quality.QualityToolMessage;
 import com.jetbrains.php.tools.quality.QualityToolXmlMessageProcessor;
@@ -115,8 +114,6 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         return new PhalyfusionConfigurable(project);
     }
 
-
-
     public boolean processStdErrMessages() {
         return true;
     }
@@ -193,7 +190,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     protected void addMessage(QualityToolMessage message) {
         if (message.isInternalError()) {
             message = new QualityToolMessage(this, message.getLineNum(), QualityToolMessage.Severity.INTERNAL_ERROR,
-                    message.getMessageText().substring(0, message.getMessageText().indexOf('\n')));
+                    message.getMessageText());
         }
 
         super.addMessage(message);

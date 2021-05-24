@@ -8,6 +8,7 @@ import com.jetbrains.php.tools.quality.QualityToolProjectConfiguration;
 import com.jetbrains.php.tools.quality.QualityToolsIgnoreFilesConfigurable;
 import ru.taptima.phalyfusion.PhalyfusionValidationInspection;
 import ru.taptima.phalyfusion.blacklist.PhalyfusionIgnoredFilesConfigurable;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +20,7 @@ public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm 
         super(project);
     }
 
-    protected QualityToolProjectConfiguration getProjectConfiguration() {
+    protected QualityToolProjectConfiguration<PhalyfusionConfiguration> getProjectConfiguration() {
         return PhalyfusionProjectConfiguration.getInstance(this.myProject);
     }
 
@@ -48,7 +49,7 @@ public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm 
     }
 
     @NotNull
-    protected QualityToolConfigurationComboBox createConfigurationComboBox() {
+    protected QualityToolConfigurationComboBox<PhalyfusionConfiguration> createConfigurationComboBox() {
         return new PhalyfusionConfigurationComboBox(this.myProject);
     }
 
