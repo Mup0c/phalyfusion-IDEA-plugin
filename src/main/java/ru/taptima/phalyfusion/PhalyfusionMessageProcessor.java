@@ -41,7 +41,6 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     private final Set<String> lineMessages = new HashSet<>();
     private int myPrevLine = -1;
     private VirtualFile myCurFile = null;
-    private boolean isFileTag = false;
 
     private final LocalFileSystem myFileSystem;
 
@@ -59,23 +58,22 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     public int getMessageStart(@NotNull String line) {
         int messageStart = line.indexOf("<file");
-        isFileTag = true;
         if (messageStart < 0) {
             messageStart = line.indexOf("<error");
             if (messageStart < 0) {
                 messageStart = line.indexOf("<warning");
             }
-            isFileTag = false;
+        } else {
+            int nameStart = line.indexOf("name=") + 5;
+            int end = line.indexOf('\"', nameStart + 1);
+            this.myCurFile = myFileSystem.findFileByPath(line.substring(nameStart + 1, end));
+            messageStart = -1;
         }
 
         return messageStart;
     }
 
-    public int getMessageEnd(@NotNull String line)
-    {
-        if (isFileTag) {
-            return line.indexOf(">");
-        }
+    public int getMessageEnd(@NotNull String line) {
         return line.indexOf("/>");
     }
 
@@ -127,13 +125,6 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         private String message;
 
         protected void parseTag(@NotNull String tagName, @NotNull Attributes attributes) {
-            if ("file".equals(tagName)) {
-                this.mySeverity = QualityToolMessage.Severity.WARNING;
-                this.message = attributes.getValue("name");
-                this.myLineNumber = -1;
-                return;
-            }
-
             if ("error".equals(tagName)) {
                 this.mySeverity = QualityToolMessage.Severity.ERROR;
             } else if ("warning".equals(tagName)) {
@@ -156,21 +147,8 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     @Override
     protected void processMessage(InputSource source) throws SAXException, IOException {
         QualityToolXmlMessageProcessor.XMLMessageHandler messageHandler = this.getXmlMessageHandler();
-
-        if (isFileTag) {
-            // Nasty way to process file tags. It seems like there is no api to process nested tags (or I didn't find it)
-            String fixedFileString = CharStreams.toString(source.getCharacterStream()) + "</file>";
-            this.mySAXParser.parse(new InputSource(new StringReader(fixedFileString)), messageHandler);
-        } else {
-            this.mySAXParser.parse(source, messageHandler);
-        }
-
+        this.mySAXParser.parse(source, messageHandler);
         if (messageHandler.isStatusValid()) {
-            if (messageHandler.getLineNumber() == -1 && messageHandler.getSeverity() == QualityToolMessage.Severity.WARNING) {
-                myCurFile = myFileSystem.findFileByPath(messageHandler.getMessageText());
-                return;
-            }
-
             PhalyfusionMessage qualityToolMessage = new PhalyfusionMessage(this, messageHandler.getLineNumber(),
                     messageHandler.getSeverity(), messageHandler.getMessageText(), myCurFile, this.getQuickFix(messageHandler));
             int currLine = qualityToolMessage.getLineNum();
