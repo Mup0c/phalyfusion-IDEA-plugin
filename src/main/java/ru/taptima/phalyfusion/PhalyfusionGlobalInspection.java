@@ -5,6 +5,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
 import com.intellij.codeInspection.*;
 import com.intellij.codeInspection.ex.GlobalInspectionToolWrapper;
+import com.intellij.codeInspection.ex.InspectionToolWrapper;
 import com.intellij.codeInspection.reference.RefGraphAnnotator;
 import com.intellij.codeInspection.reference.RefManager;
 import com.intellij.execution.ExecutionException;
@@ -81,6 +82,9 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                 throw new QualityToolExecutionException("Phalyfusion path is incorrect");
             }
 
+            configuration = configuration.clone();
+            configuration.setTimeout(configuration.getTimeout() * psiFiles.length);
+
             QualityToolAnnotatorInfo annotatorInfo = collectAnnotatorInfo(psiFiles[0], configuration);
 
             if (annotatorInfo == null) {
@@ -124,7 +128,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
             }
 
             var psiFile = fileToPsi.get(phalyfusionMessage.getFile());
-
             messageMap.get(phalyfusionMessage.getFile()).add(phalyfusionMessage);
 
             HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText())
