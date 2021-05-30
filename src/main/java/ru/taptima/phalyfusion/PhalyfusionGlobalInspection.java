@@ -30,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
-import ru.taptima.phalyfusion.issues.IssueCacheManager;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -106,7 +105,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                                  @NotNull QualityToolMessageProcessor messageProcessor, @NotNull PsiFile[] psiFiles,
                                  @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
         Map<VirtualFile, PsiFile> fileToPsi = Arrays.stream(psiFiles).map(it -> Pair.create(it.getVirtualFile(), it)).collect(Collectors.toMap(it -> it.first, it -> it.second));
-        IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
         var messageMap = new HashMap<VirtualFile, List<QualityToolMessage>>();
 
         for (QualityToolMessage message : messageProcessor.getMessages()) {
@@ -137,8 +135,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                     Objects.requireNonNull(highlightInfo), phalyfusionMessage.getTextRange(), () -> "Quality Tool Error",
                     InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
         }
-
-        issuesCache.setCachedResults(messageMap);
     }
 
     private void splitRunTool(@NotNull PsiFile[] psiFiles, @NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo) {

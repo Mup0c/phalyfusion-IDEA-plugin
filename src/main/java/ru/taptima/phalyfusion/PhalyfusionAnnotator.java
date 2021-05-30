@@ -15,7 +15,6 @@ import ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import ru.taptima.phalyfusion.issues.IssueCacheManager;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -90,24 +89,14 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
 
     protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo,
                            @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
-        // This inspection is only for on-fly mode. Batch inspections are provided with PhalyfusionGlobal
-        if (!annotatorInfo.isOnTheFly()) {
-            return;
-        }
-
         PhalyfusionConfiguration configuration = (PhalyfusionConfiguration) getConfiguration(annotatorInfo.getProject(), annotatorInfo.getInspection());
-        IssueCacheManager issuesCache = ServiceManager.getService(annotatorInfo.getProject(), IssueCacheManager.class);
 
-        if (configuration == null || !configuration.getOnFlyMode()) {
-            if (messageProcessor instanceof PhalyfusionMessageProcessor) {
-                ((PhalyfusionMessageProcessor)messageProcessor)
-                        .loadFromCache(issuesCache.getCachedResultForFile(annotatorInfo.getOriginalFile()), annotatorInfo);
-            }
+        if (configuration == null || !annotatorInfo.isOnTheFly() || !configuration.getOnFlyMode()) {
             return;
         }
 
+        // This inspection is only for on-fly mode. Batch inspections are provided with PhalyfusionGlobal
         launchQualityTool(new PsiFile[] { annotatorInfo.getPsiFile() }, annotatorInfo, messageProcessor, transfer);
-        issuesCache.setCachedResultsForFile(annotatorInfo.getOriginalFile(), messageProcessor.getMessages());
     }
 
     @Nullable

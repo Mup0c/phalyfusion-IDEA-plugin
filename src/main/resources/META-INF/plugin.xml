@@ -51,7 +51,6 @@
         <externalAnnotator language="PHP" implementationClass="ru.taptima.phalyfusion.PhalyfusionAnnotator"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList"/>
-        <projectService serviceImplementation="ru.taptima.phalyfusion.issues.IssueCacheManager"/>
         <localInspection language="PHP"
                          shortName="PhalyfusionValidation"
                          displayName="Phalyfusion on-fly validation"
