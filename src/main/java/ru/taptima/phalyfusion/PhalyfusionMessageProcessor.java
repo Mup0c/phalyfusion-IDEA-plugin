@@ -1,10 +1,11 @@
 package ru.taptima.phalyfusion;
 
-import com.google.common.io.CharStreams;
 import com.intellij.codeHighlighting.HighlightDisplayLevel;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -20,7 +21,6 @@ import org.xml.sax.SAXException;
 import ru.taptima.phalyfusion.form.PhalyfusionConfigurable;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 
 /**
@@ -41,6 +41,8 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     private final Set<String> lineMessages = new HashSet<>();
     private int myPrevLine = -1;
     private VirtualFile myCurFile = null;
+    private String myFileTag = null;
+    private Project myProject;
 
     private final LocalFileSystem myFileSystem;
 
@@ -50,6 +52,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         // this.myWarningsHighlightLevel = ((PhpCSValidationInspection)info.getInspection()).getWarningLevel();
         this.myWarningsHighlightLevel = HighlightDisplayLevel.WARNING;
         myFileSystem = LocalFileSystem.getInstance();
+        myProject = info.getProject();
     }
 
     protected XMLMessageHandler getXmlMessageHandler() {
@@ -57,6 +60,15 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     }
 
     public int getMessageStart(@NotNull String line) {
+        if (myFileTag != null) {
+            int end = processFile(line, 0);
+            if (end == -1) {
+                return -1;
+            }
+
+            line = line.substring(end);
+        }
+
         int messageStart = line.indexOf("<file");
         if (messageStart < 0) {
             messageStart = line.indexOf("<error");
@@ -64,28 +76,38 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
                 messageStart = line.indexOf("<warning");
             }
         } else {
-            int nameStart = line.indexOf("name=") + 5;
-            int end = line.indexOf('\"', nameStart + 1);
-            this.myCurFile = myFileSystem.findFileByPath(line.substring(nameStart + 1, end));
+            int nameStart = line.indexOf("name=") + 6;
+            processFile(line, nameStart);
             messageStart = -1;
         }
 
         return messageStart;
     }
 
-    public int getMessageEnd(@NotNull String line) {
-        return line.indexOf("/>");
+    private int processFile(@NotNull String line, int start) {
+        int end = line.indexOf('\"', start);
+        if (myFileTag == null) {
+            myFileTag = "";
+        }
+
+        if (end == -1) {
+            myFileTag += line.substring(start);
+            return -1;
+        }
+
+        myFileTag += line.substring(start, end);
+
+        if (SystemInfo.isWindows && !FileUtil.isAbsolute(myFileTag)) {
+            myFileTag = myProject.getBasePath() + "/" + FileUtil.toCanonicalPath(myFileTag);
+        }
+
+        this.myCurFile = myFileSystem.findFileByPath(myFileTag);
+        myFileTag = null;
+        return end;
     }
 
-    public void loadFromCache(@NotNull Collection<QualityToolMessage> cachedMessages, QualityToolAnnotatorInfo annotatorInfo) {
-        for (QualityToolMessage message : cachedMessages) {
-            if (message instanceof PhalyfusionMessage) {
-                PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
-                if (phalyfusionMessage.getFile().equals(annotatorInfo.getOriginalFile())) {
-                    addMessage(message);
-                }
-            }
-        }
+    public int getMessageEnd(@NotNull String line) {
+        return line.indexOf("/>");
     }
 
     protected IntentionAction @NotNull [] getQuickFix(XMLMessageHandler messageHandler) {

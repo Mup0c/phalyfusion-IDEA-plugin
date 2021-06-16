@@ -2,7 +2,6 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.execution.ExecutionException;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
