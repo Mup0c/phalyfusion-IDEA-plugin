@@ -23,20 +23,32 @@ PhpStorm __2020.1 — 2020.2.2__
 
 *   Install and configure [Phalyfusion](https://github.com/taptima/phalyfusion) and desired code analysers
 *   Install the plugin by going to Preferences | Plugins and searching "Phalyfusion" 
-*   Provide path to Phalyfusion executable in "Preferences | Languages & Frameworks | PHP | Quality Tools | Phalyfusion"
-*   Enable inspection in "Preferences | Editor | Inspections | PHP | Quality tools | Phalyfusion validation"
-*   Instant analysis of current file highlights found errors in your code
-*   You can manually run analysis via "Run inspection by name" choosing "Phalyfusion validation" and configuring analysis scope
+*   Plugin will find the path to Phalyfusion executable automatically on first run.
+    You can provide path to Phalyfusion executable by yourself if needed.
+    See "Preferences | Languages & Frameworks | PHP | Quality Tools | Phalyfusion"
+*   Enable inspections "Phalyfusion global validation" and "Phalyfusion on-fly validation" in "Preferences | Editor | Inspections | PHP | Quality tools"
+    to be able to launch Phalyfusion via plugin.
+*   Use toolbar button or "Run | Run Phalyfusion" option to configure an analysis scope and launch Phalyfusion
+    ![Run Phalyfusion button](https://i.imgur.com/FPowVBg.png)
+*   Enable "Launch Phalyfusion in on-fly mode" setting in "Preferences | Language & Frameworks | PHP | Quality Tools | Phalyfusion | Configuration"
+    for instant analysis of the current file and error highlighting
 
 ## Features
 
-*   Combining reports of multiple PHP static code analysers
-*   Perform instant analysis of current file
-*   Show found errors by highlighting them in code and provide descriptions in tooltips
+*   Phalyfusion auto detection in current project
+*   Combine reports of multiple PHP static code analysers
 *   Provide file-by-file structured interactive analysis report
+*   Navigation between errors found by Phalyfusion
+*   Perform instant analysis of current file
+*   Show found errors by highlighting them in the code and provide descriptions in tooltips
+*   Auto generate Phalyfusion neon configuration on the first run with all detected in the current project code analysers.
+    
+    **Note**: You need to set up all configuration files for code analysers by yourself.
 
 ## Screenshots
 
 ![Code editor highlighting](https://plugins.jetbrains.com/files/15198/screenshot_23442.png)
 ![Inspection result](https://plugins.jetbrains.com/files/15198/screenshot_23443.png)
 ![Specify analysis scope](https://plugins.jetbrains.com/files/15198/screenshot_23444.png)
+![Plugin configuration](https://i.imgur.com/P28DYI2.png[/img])
+![Inspection result 2](https://i.imgur.com/Awq0fS2.png)
