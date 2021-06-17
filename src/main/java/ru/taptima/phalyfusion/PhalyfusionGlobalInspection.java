@@ -5,14 +5,12 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
 import com.intellij.codeInspection.*;
 import com.intellij.codeInspection.ex.GlobalInspectionToolWrapper;
-import com.intellij.codeInspection.ex.InspectionToolWrapper;
 import com.intellij.codeInspection.reference.RefGraphAnnotator;
 import com.intellij.codeInspection.reference.RefManager;
 import com.intellij.execution.ExecutionException;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
@@ -84,7 +82,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
             configuration = configuration.clone();
             configuration.setTimeout(configuration.getTimeout() * psiFiles.length);
 
-            QualityToolAnnotatorInfo annotatorInfo = collectAnnotatorInfo(psiFiles[0], configuration);
+            QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo = collectAnnotatorInfo(psiFiles[0], configuration);
 
             if (annotatorInfo == null) {
                 logError("Phalyfusion execution exception", "Problems during collection of annotator info", null);
@@ -101,7 +99,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         }
     }
 
-    private void processMessages(@NotNull GlobalInspectionContext globalContext, @NotNull QualityToolAnnotatorInfo annotatorInfo,
+    private void processMessages(@NotNull GlobalInspectionContext globalContext, @NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo,
                                  @NotNull QualityToolMessageProcessor messageProcessor, @NotNull PsiFile[] psiFiles,
                                  @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
         Map<VirtualFile, PsiFile> fileToPsi = Arrays.stream(psiFiles).map(it -> Pair.create(it.getVirtualFile(), it)).collect(Collectors.toMap(it -> it.first, it -> it.second));
@@ -137,7 +135,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         }
     }
 
-    private void splitRunTool(@NotNull PsiFile[] psiFiles, @NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo) {
+    private void splitRunTool(@NotNull PsiFile[] psiFiles, @NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo) {
         PhpSdkFileTransfer transfer = getPhpSdkFileTransfer(annotatorInfo);
 
         if (!SystemInfo.isWindows) {
@@ -161,7 +159,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
 
     }
 
-    private void tryRunTool(@NotNull QualityToolAnnotatorInfo annotatorInfo, @NotNull QualityToolMessageProcessor messageProcessor,
+    private void tryRunTool(@NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo, @NotNull QualityToolMessageProcessor messageProcessor,
                                @NotNull PhpSdkFileTransfer transfer, @NotNull PsiFile[] files) {
         try {
             PhalyfusionAnnotator.launchQualityTool(files, annotatorInfo, messageProcessor, transfer);
@@ -176,15 +174,15 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         }
     }
 
-    private PhpSdkFileTransfer getPhpSdkFileTransfer(@NotNull QualityToolAnnotatorInfo annotatorInfo) {
+    private PhpSdkFileTransfer getPhpSdkFileTransfer(@NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo) {
         String id = annotatorInfo.getInterpreterId();
         PhpSdkAdditionalData sdkData
                 = StringUtil.isEmpty(id) ? null : PhpInterpretersManagerImpl.getInstance(annotatorInfo.getProject()).findInterpreterDataById(id);
         return PhpSdkFileTransfer.getSdkFileTransfer(sdkData);
     }
 
-    private static void removeTempFile(@NotNull QualityToolAnnotatorInfo collectedInfo, @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
-        String tempFile = collectedInfo.getFile();
+    private static void removeTempFile(@NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo, @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
+        String tempFile = collectedInfo.getTempFile();
         if (tempFile != null) {
             transfer.delete(collectedInfo.getProject(), collectedInfo.getTimeout() / 2, false);
         }
@@ -200,7 +198,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         return PhalyfusionProjectConfiguration.getInstance(project).findSelectedConfiguration(project);
     }
 
-    public final QualityToolAnnotatorInfo collectAnnotatorInfo(@NotNull PsiFile file, PhalyfusionConfiguration configuration) {
+    public final QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectAnnotatorInfo(@NotNull PsiFile file, PhalyfusionConfiguration configuration) {
         InspectionProfile inspectionProfile = InspectionProjectProfileManager.getInstance(file.getProject()).getCurrentProfile();
         GlobalInspectionToolWrapper globalInspectionToolWrapper
                 = (GlobalInspectionToolWrapper)inspectionProfile.getInspectionTool(this.getShortName(), file);
@@ -233,9 +231,9 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     }
 
     @NotNull
-    private QualityToolAnnotatorInfo createAnnotatorInfo(@NotNull PsiFile file, QualityToolValidationInspection tool,
+    private QualityToolAnnotatorInfo<PhalyfusionValidationInspection> createAnnotatorInfo(@NotNull PsiFile file, PhalyfusionValidationInspection tool,
                                                            Project project, QualityToolConfiguration configuration) {
-        return new QualityToolAnnotatorInfo(file, tool, project, configuration, false);
+        return new QualityToolAnnotatorInfo<>(file, tool, project, configuration, false);
     }
 
     @Override
@@ -243,7 +241,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         return myValidationInspection;
     }
 
-    private static String toPresentableLocation(@NotNull QualityToolAnnotatorInfo collectedInfo) {
+    private static String toPresentableLocation(@NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo) {
         String interpreterId = collectedInfo.getInterpreterId();
         if (StringUtil.isNotEmpty(interpreterId)) {
             Project project = collectedInfo.getProject();
@@ -258,7 +256,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         return "local";
     }
 
-    private static void logWarning(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo collectedInfo) {
+    private static void logWarning(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo) {
         if (collectedInfo == null) {
             LOG.warn(prefix + ": " + message);
             return;
@@ -267,7 +265,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         LOG.warn(formattedPrefix + ": " + message);
     }
 
-    private static void logError(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo collectedInfo) {
+    private static void logError(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo) {
         if (collectedInfo == null) {
             LOG.error(prefix + ": " + message);
             return;
@@ -277,7 +275,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     }
 
     private static void showInfo(@NotNull String title, @NotNull String prefix, @NotNull String message,
-                                 @NotNull NotificationType type, @Nullable QualityToolAnnotatorInfo annotatorInfo) {
+                                 @NotNull NotificationType type, @Nullable QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo) {
         Notifications.Bus.notify(new Notification(GROUP_ID, title, prefix + ": " + message, type, null));
         logWarning(prefix, message, annotatorInfo);
     }

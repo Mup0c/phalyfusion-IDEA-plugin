@@ -5,7 +5,10 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.OnOffButton;
 import com.jetbrains.php.tools.quality.QualityToolConfigurableForm;
+import com.jetbrains.php.tools.quality.QualityToolConfiguration;
 import com.jetbrains.php.tools.quality.QualityToolCustomSettings;
+import com.jetbrains.php.tools.quality.QualityToolType;
+import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
 import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +46,11 @@ public class PhalyfusionConfigurableForm<C extends PhalyfusionConfiguration> ext
     @Override
     public @Nullable QualityToolCustomSettings getCustomConfigurable(@NotNull Project project, @NotNull C configuration) {
         return new PhalyfusionCustomConfigurable(configuration);
+    }
+
+    @Override
+    public QualityToolType getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
     }
 
     public boolean isValidToolFile(VirtualFile file) {

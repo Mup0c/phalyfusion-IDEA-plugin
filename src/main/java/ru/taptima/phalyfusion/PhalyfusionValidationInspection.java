@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 public class PhalyfusionValidationInspection extends QualityToolValidationInspection {
     @NotNull
     @Override
-    protected QualityToolAnnotator getAnnotator() {
+    protected PhalyfusionAnnotator getAnnotator() {
         return PhalyfusionAnnotator.INSTANCE;
     }
 

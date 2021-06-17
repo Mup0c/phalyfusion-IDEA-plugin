@@ -2,10 +2,8 @@ package ru.taptima.phalyfusion.form;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.jetbrains.php.tools.quality.QualityToolConfigurationComboBox;
-import com.jetbrains.php.tools.quality.QualityToolProjectConfigurableForm;
-import com.jetbrains.php.tools.quality.QualityToolProjectConfiguration;
-import com.jetbrains.php.tools.quality.QualityToolsIgnoreFilesConfigurable;
+import com.jetbrains.php.tools.quality.*;
+import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
 import ru.taptima.phalyfusion.PhalyfusionValidationInspection;
 import ru.taptima.phalyfusion.blacklist.PhalyfusionIgnoredFilesConfigurable;
 import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
@@ -51,6 +49,11 @@ public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm 
     @NotNull
     protected QualityToolConfigurationComboBox<PhalyfusionConfiguration> createConfigurationComboBox() {
         return new PhalyfusionConfigurationComboBox(this.myProject);
+    }
+
+    @Override
+    protected QualityToolType<PhalyfusionConfiguration> getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
     }
 
     protected QualityToolsIgnoreFilesConfigurable getIgnoredFilesConfigurable() {

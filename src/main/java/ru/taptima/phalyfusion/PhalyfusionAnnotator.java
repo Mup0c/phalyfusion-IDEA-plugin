@@ -2,7 +2,9 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.execution.ExecutionException;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiFile;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
 import com.jetbrains.php.lang.PhpLanguage;
@@ -20,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class PhalyfusionAnnotator extends QualityToolAnnotator {
+public class PhalyfusionAnnotator extends QualityToolAnnotator<PhalyfusionValidationInspection> {
     public static final PhalyfusionAnnotator INSTANCE = new PhalyfusionAnnotator();
 
     @NotNull
@@ -29,10 +31,9 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
         return "phalyfusion_temp.tmp";
     }
 
-    @NotNull
     @Override
-    protected String getInspectionId() {
-        return (new PhalyfusionValidationInspection()).getID();
+    protected @Nullable List<String> getOptions(@Nullable String filepath, @NotNull PhalyfusionValidationInspection inspection, @NotNull Project project) {
+        return null;
     }
 
     @Override
@@ -60,12 +61,12 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
             logWarning(annotatorInfo, "Failed to create phalyfusion configuration file", e);
         }
 
-        QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, params);
+        QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, null, params);
 
         if (messageProcessor.getInternalErrorMessage() != null) {
             if (annotatorInfo.isOnTheFly()) {
                 String message = messageProcessor.getInternalErrorMessage().getMessageText();
-                showProcessErrorMessage(annotatorInfo, message);
+                showProcessErrorMessage(annotatorInfo.getInspection(), message, new ArrayList<>());
             }
 
             messageProcessor.setFatalError();
@@ -86,6 +87,7 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
         return options;
     }
 
+    @Override
     protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo,
                            @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
         PhalyfusionConfiguration configuration = (PhalyfusionConfiguration) getConfiguration(annotatorInfo.getProject(), annotatorInfo.getInspection());
@@ -105,5 +107,10 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
         } catch (QualityToolValidationException e) {
             return null;
         }
+    }
+
+    @Override
+    protected @NotNull QualityToolType<PhalyfusionConfiguration> getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
     }
 }

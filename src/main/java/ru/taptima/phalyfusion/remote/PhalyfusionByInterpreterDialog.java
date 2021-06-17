@@ -10,7 +10,7 @@ import java.util.List;
 
 public class PhalyfusionByInterpreterDialog extends QualityToolByInterpreterDialog<PhalyfusionConfiguration, PhalyfusionRemoteConfiguration> {
     protected PhalyfusionByInterpreterDialog(@Nullable Project project, @NotNull List<PhalyfusionConfiguration> settings) {
-        super(project, settings, "Phalyfusion");
+        super(project, settings, "Phalyfusion", PhalyfusionRemoteConfiguration.class);
     }
 
     protected boolean canProcessSetting(@NotNull PhalyfusionConfiguration settings) {

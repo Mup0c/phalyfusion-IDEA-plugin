@@ -2,6 +2,7 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.codeHighlighting.HighlightDisplayLevel;
 import com.intellij.codeInsight.intention.IntentionAction;
+import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
@@ -12,12 +13,14 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.jetbrains.php.tools.quality.QualityToolAnnotatorInfo;
 import com.jetbrains.php.tools.quality.QualityToolMessage;
+import com.jetbrains.php.tools.quality.QualityToolType;
 import com.jetbrains.php.tools.quality.QualityToolXmlMessageProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import ru.taptima.phalyfusion.form.PhalyfusionConfigurable;
 
 import java.io.IOException;
@@ -42,7 +45,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     private int myPrevLine = -1;
     private VirtualFile myCurFile = null;
     private String myFileTag = null;
-    private Project myProject;
+    private final Project myProject;
 
     private final LocalFileSystem myFileSystem;
 
@@ -124,14 +127,14 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         return QualityToolMessage.Severity.WARNING.equals(severity) ? this.myWarningsHighlightLevel : null;
     }
 
+    @Override
+    protected @IntentionFamilyName QualityToolType<PhalyfusionConfiguration> getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
+    }
+
     @NotNull
     protected String getQuickFixFamilyName() {
         return "Phalyfusion";
-    }
-
-    @Override
-    protected Configurable getToolConfigurable(@NotNull Project project) {
-        return new PhalyfusionConfigurable(project);
     }
 
     public boolean processStdErrMessages() {

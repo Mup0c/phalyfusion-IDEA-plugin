@@ -6,13 +6,20 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.xmlb.XmlSerializer;
 import com.jetbrains.php.tools.quality.QualityToolConfigurationBaseManager;
 import com.jetbrains.php.tools.quality.QualityToolConfigurationProvider;
+import com.jetbrains.php.tools.quality.QualityToolType;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
 
 
 public class PhalyfusionConfigurationBaseManager extends QualityToolConfigurationBaseManager<PhalyfusionConfiguration> {
     public PhalyfusionConfigurationBaseManager() {
+    }
+
+    @Override
+    protected @NotNull QualityToolType<PhalyfusionConfiguration> getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
     }
 
     public static PhalyfusionConfigurationBaseManager getInstance() {

@@ -45,7 +45,7 @@ public class QualityToolUtil {
      * Extract the working dir for local or remote resolving
      */
     @Nullable
-    public static String getWorkingDirectoryFromAnnotator(@NotNull QualityToolAnnotatorInfo annotatorInfo) {
+    public static String getWorkingDirectoryFromAnnotator(@NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo) {
         String interpreterId = annotatorInfo.getInterpreterId();
 
         String workingDir = null;
