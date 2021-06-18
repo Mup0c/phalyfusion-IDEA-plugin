@@ -4,7 +4,6 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.php.tools.quality.*;
 import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
-import ru.taptima.phalyfusion.PhalyfusionValidationInspection;
 import ru.taptima.phalyfusion.blacklist.PhalyfusionIgnoredFilesConfigurable;
 import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
@@ -34,11 +33,6 @@ public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm 
     @NotNull
     public String getId() {
         return PhalyfusionConfigurable.class.getName();
-    }
-
-    @NotNull
-    protected String getInspectionShortName() {
-        return new PhalyfusionValidationInspection().getShortName();
     }
 
     @Override

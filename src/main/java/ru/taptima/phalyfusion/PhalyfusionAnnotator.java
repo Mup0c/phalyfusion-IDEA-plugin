@@ -2,9 +2,7 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.execution.ExecutionException;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiFile;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
 import com.jetbrains.php.lang.PhpLanguage;
@@ -61,6 +59,9 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator<PhalyfusionValida
             logWarning(annotatorInfo, "Failed to create phalyfusion configuration file", e);
         }
 
+        // 2021.1 API
+        //QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, params);
+
         QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, null, params);
 
         if (messageProcessor.getInternalErrorMessage() != null) {
@@ -92,11 +93,11 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator<PhalyfusionValida
                            @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
         PhalyfusionConfiguration configuration = (PhalyfusionConfiguration) getConfiguration(annotatorInfo.getProject(), annotatorInfo.getInspection());
 
+        // This inspection is only for on-fly mode. Batch inspections are provided with PhalyfusionGlobal
         if (configuration == null || !annotatorInfo.isOnTheFly() || !configuration.getOnFlyMode()) {
             return;
         }
 
-        // This inspection is only for on-fly mode. Batch inspections are provided with PhalyfusionGlobal
         launchQualityTool(new PsiFile[] { annotatorInfo.getPsiFile() }, annotatorInfo, messageProcessor, transfer);
     }
 

@@ -46,7 +46,7 @@
     <a href="https://github.com/taptima/idea-php-phalyfusion-plugin/issues">Issues</a>
     ]]></description>
 
-    <idea-version since-build="181"/>
+    <idea-version since-build="211"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.jetbrains.php</depends>
@@ -55,14 +55,14 @@
 
     <extensions defaultExtensionNs="com.intellij">
 
-        <applicationService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$AppPhalyfusionConfigurationBaseManager"/>
+        <applicationService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$PhalyfusionAppConfigurationBaseManager"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
-        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$ProjectPhalyfusionConfigurationBaseManager"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$PhalyfusionProjectConfigurationBaseManager"/>
         <externalAnnotator language="PHP" implementationClass="ru.taptima.phalyfusion.PhalyfusionAnnotator"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList"/>
         <localInspection language="PHP"
-                         shortName="PhalyfusionValidation"
+                         shortName="PhalyfusionValidationInspection"
                          displayName="Phalyfusion on-fly validation"
                          groupPath="PHP"
                          groupName="Quality tools"
@@ -88,9 +88,9 @@
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.jetbrains.php">
+        <composerConfigClient implementation="ru.taptima.phalyfusion.configuration.PhalyfusionComposerConfig"/>
         <tools.quality.type implementation="ru.taptima.phalyfusion.PhalyfusionQualityToolType"/>
         <tools.projectConfigurableForm instance="ru.taptima.phalyfusion.form.PhalyfusionConfigurable"/>
-        <config.interpreters.PhpInterpretersStateListener implementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
     </extensions>
 
     <actions>

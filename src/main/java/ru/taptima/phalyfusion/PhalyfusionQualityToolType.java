@@ -16,6 +16,9 @@ import ru.taptima.phalyfusion.form.PhalyfusionConfigurableForm;
 public class PhalyfusionQualityToolType extends QualityToolType<PhalyfusionConfiguration> {
     public static final PhalyfusionQualityToolType INSTANCE = new PhalyfusionQualityToolType();
 
+    private PhalyfusionQualityToolType() {
+    }
+
     @NotNull
     @Override
     public String getDisplayName() {

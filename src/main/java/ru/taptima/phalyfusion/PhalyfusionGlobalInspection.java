@@ -13,7 +13,6 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -30,7 +29,6 @@ import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     private static final int MAX_WINDOWS_CMD_LENGTH = 8192;
@@ -79,9 +77,6 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                 throw new QualityToolExecutionException("Phalyfusion path is incorrect");
             }
 
-            configuration = configuration.clone();
-            configuration.setTimeout(configuration.getTimeout() * psiFiles.length);
-
             QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo = collectAnnotatorInfo(psiFiles[0], configuration);
 
             if (annotatorInfo == null) {
@@ -89,7 +84,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
                 throw new QualityToolExecutionException("Problems during collection of annotator info");
             }
 
-            QualityToolMessageProcessor messageProcessor = new PhalyfusionMessageProcessor(annotatorInfo);
+            QualityToolMessageProcessor messageProcessor = new PhalyfusionMessageProcessor(annotatorInfo, psiFiles);
             splitRunTool(psiFiles, messageProcessor, annotatorInfo);
             processMessages(globalContext, annotatorInfo, messageProcessor, psiFiles, problemDescriptionsProcessor);
         } catch (QualityToolExecutionException | QualityToolValidationException e) {
@@ -102,8 +97,7 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
     private void processMessages(@NotNull GlobalInspectionContext globalContext, @NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo,
                                  @NotNull QualityToolMessageProcessor messageProcessor, @NotNull PsiFile[] psiFiles,
                                  @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
-        Map<VirtualFile, PsiFile> fileToPsi = Arrays.stream(psiFiles).map(it -> Pair.create(it.getVirtualFile(), it)).collect(Collectors.toMap(it -> it.first, it -> it.second));
-        var messageMap = new HashMap<VirtualFile, List<QualityToolMessage>>();
+        var messageMap = new HashMap<PsiFile, List<QualityToolMessage>>();
 
         for (QualityToolMessage message : messageProcessor.getMessages()) {
             HighlightInfoType highlightInfoType = HighlightInfoType.WARNING;
@@ -115,21 +109,17 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
             }
 
             PhalyfusionMessage phalyfusionMessage = (PhalyfusionMessage)message;
-            if (!fileToPsi.containsKey(phalyfusionMessage.getFile())) {
-                continue;
-            }
+            var psiFile = phalyfusionMessage.getFile();
 
-            if (!messageMap.containsKey(phalyfusionMessage.getFile())) {
-                messageMap.put(phalyfusionMessage.getFile(), new ArrayList<>());
+            if (!messageMap.containsKey(psiFile)) {
+                messageMap.put(psiFile, new ArrayList<>());
             }
-
-            var psiFile = fileToPsi.get(phalyfusionMessage.getFile());
-            messageMap.get(phalyfusionMessage.getFile()).add(phalyfusionMessage);
+            messageMap.get(psiFile).add(phalyfusionMessage);
 
             HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(highlightInfoType).description(phalyfusionMessage.getMessageText())
                     .range(phalyfusionMessage.getTextRange()).create();
 
-            GlobalInspectionUtil.createProblem(Objects.requireNonNull(psiFile),
+            GlobalInspectionUtil.createProblem(psiFile,
                     Objects.requireNonNull(highlightInfo), phalyfusionMessage.getTextRange(), () -> "Quality Tool Error",
                     InspectionManager.getInstance(annotatorInfo.getProject()), problemDescriptionsProcessor, globalContext);
         }
@@ -256,7 +246,8 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         return "local";
     }
 
-    private static void logWarning(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo) {
+    private static void logWarning(@NotNull String prefix, @NotNull String message,
+                                   @Nullable QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo) {
         if (collectedInfo == null) {
             LOG.warn(prefix + ": " + message);
             return;
@@ -265,7 +256,8 @@ public class PhalyfusionGlobalInspection extends GlobalInspectionTool {
         LOG.warn(formattedPrefix + ": " + message);
     }
 
-    private static void logError(@NotNull String prefix, @NotNull String message, @Nullable QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo) {
+    private static void logError(@NotNull String prefix, @NotNull String message,
+                                 @Nullable QualityToolAnnotatorInfo<PhalyfusionValidationInspection> collectedInfo) {
         if (collectedInfo == null) {
             LOG.error(prefix + ": " + message);
             return;

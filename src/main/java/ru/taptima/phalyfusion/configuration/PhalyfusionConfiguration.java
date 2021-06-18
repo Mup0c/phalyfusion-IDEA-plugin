@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+
 public class PhalyfusionConfiguration implements QualityToolConfiguration {
     private static final String LOCAL = "Local";
     private String myPhalyfusionPath = "";
@@ -22,11 +23,13 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
 
     public PhalyfusionConfiguration() { }
 
+    @Override
     @Transient
     public String getToolPath() {
         return this.myPhalyfusionPath;
     }
 
+    @Override
     public void setToolPath(String toolPath) {
         this.myPhalyfusionPath = toolPath;
     }
@@ -69,13 +72,11 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
 
     @Transient
     public String[] getStandards() {
-        return (String[]) ArrayUtil.append(this.myStandards.split(";"), "Custom");
+        return ArrayUtil.append(this.myStandards.split(";"), "Custom");
     }
 
     public void setStandards(String[] standards) {
-        this.myStandards = (String) Arrays.stream(standards).filter((standard) -> {
-            return !"Custom".equals(standard);
-        }).collect(Collectors.joining(";"));
+        this.myStandards = Arrays.stream(standards).filter((standard) -> !"Custom".equals(standard)).collect(Collectors.joining(";"));
     }
 
     @Attribute("timeout")
@@ -83,25 +84,30 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
         return this.myTimeoutMs;
     }
 
+    @Override
     public void setTimeout(int timeout) {
         this.myTimeoutMs = timeout;
     }
 
+    @Override
     @NotNull
     public String getPresentableName(@Nullable Project project) {
         return this.getId();
     }
 
+    @Override
     @NotNull
     public String getId() {
         return "Local";
     }
 
+    @Override
     @Nullable
     public String getInterpreterId() {
         return null;
     }
 
+    @Override
     @NotNull
     public PhalyfusionConfiguration clone() {
         PhalyfusionConfiguration settings = new PhalyfusionConfiguration();
@@ -117,6 +123,7 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
         settings.isOnFlyModeEnabled = this.isOnFlyModeEnabled;
     }
 
+    @Override
     public int compareTo(@NotNull QualityToolConfiguration o) {
         if (!(o instanceof PhalyfusionConfiguration)) {
             return 1;

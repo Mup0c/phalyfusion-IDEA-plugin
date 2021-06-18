@@ -16,8 +16,8 @@ Phalyfusion is a tool for convenient and effective usage of multiple PHP static 
 __Page at JetBrains marketplace:__ [Phalyfusion Plugin](https://plugins.jetbrains.com/plugin/15198-phalyfusion)
 ## Supported products
 
-IntelliJ IDEA Ultimate __2020.1 — 2020.2.3__  
-PhpStorm __2020.1 — 2020.2.2__
+IntelliJ IDEA Ultimate __2021.1.1 — 2021.1.2__  
+PhpStorm __2021.1.1 — 2021.1.2__
 
 ## Installation and usage
 

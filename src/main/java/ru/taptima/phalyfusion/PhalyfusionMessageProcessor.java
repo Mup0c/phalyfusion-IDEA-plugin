@@ -3,14 +3,11 @@ package ru.taptima.phalyfusion;
 import com.intellij.codeHighlighting.HighlightDisplayLevel;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
-import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
 import com.jetbrains.php.tools.quality.QualityToolAnnotatorInfo;
 import com.jetbrains.php.tools.quality.QualityToolMessage;
 import com.jetbrains.php.tools.quality.QualityToolType;
@@ -21,10 +18,10 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
-import ru.taptima.phalyfusion.form.PhalyfusionConfigurable;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * All common tools all output as "checkstyle" format
@@ -43,19 +40,25 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     private final HighlightDisplayLevel myWarningsHighlightLevel;
     private final Set<String> lineMessages = new HashSet<>();
     private int myPrevLine = -1;
-    private VirtualFile myCurFile = null;
-    private String myFileTag = null;
+    private String myFilePath = "";
+    private boolean isInFile = false;
     private final Project myProject;
-
-    private final LocalFileSystem myFileSystem;
+    private final Map<String, PsiFile> pathToPsi;
 
     public PhalyfusionMessageProcessor(QualityToolAnnotatorInfo info) {
         super(info);
-        // allow config?
-        // this.myWarningsHighlightLevel = ((PhpCSValidationInspection)info.getInspection()).getWarningLevel();
+
         this.myWarningsHighlightLevel = HighlightDisplayLevel.WARNING;
-        myFileSystem = LocalFileSystem.getInstance();
         myProject = info.getProject();
+        pathToPsi = Arrays.stream(new PsiFile[] {getFile()}).map(it -> Pair.create(it.getVirtualFile().getPath(), it)).collect(Collectors.toMap(it -> it.first, it -> it.second));
+    }
+
+    public PhalyfusionMessageProcessor(QualityToolAnnotatorInfo info, PsiFile[] files) {
+        super(info);
+
+        this.myWarningsHighlightLevel = HighlightDisplayLevel.WARNING;
+        myProject = info.getProject();
+        pathToPsi = Arrays.stream(files).map(it -> Pair.create(it.getVirtualFile().getPath(), it)).collect(Collectors.toMap(it -> it.first, it -> it.second));
     }
 
     protected XMLMessageHandler getXmlMessageHandler() {
@@ -63,7 +66,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     }
 
     public int getMessageStart(@NotNull String line) {
-        if (myFileTag != null) {
+        if (isInFile) {
             int end = processFile(line, 0);
             if (end == -1) {
                 return -1;
@@ -74,6 +77,11 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
         int messageStart = line.indexOf("<file");
         if (messageStart < 0) {
+            messageStart = line.indexOf("</file");
+            if (messageStart > -1) {
+                myFilePath = "";
+                return -1;
+            }
             messageStart = line.indexOf("<error");
             if (messageStart < 0) {
                 messageStart = line.indexOf("<warning");
@@ -89,23 +97,25 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     private int processFile(@NotNull String line, int start) {
         int end = line.indexOf('\"', start);
-        if (myFileTag == null) {
-            myFileTag = "";
-        }
 
         if (end == -1) {
-            myFileTag += line.substring(start);
+            myFilePath += line.substring(start);
+            isInFile = true;
             return -1;
         }
 
-        myFileTag += line.substring(start, end);
+        myFilePath += line.substring(start, end);
 
-        if (SystemInfo.isWindows && !FileUtil.isAbsolute(myFileTag)) {
-            myFileTag = myProject.getBasePath() + "/" + FileUtil.toCanonicalPath(myFileTag);
+        if (SystemInfo.isWindows && !FileUtil.isAbsolute(myFilePath)) {
+            myFilePath = myProject.getBasePath() + "/" + FileUtil.toCanonicalPath(myFilePath);
         }
 
-        this.myCurFile = myFileSystem.findFileByPath(myFileTag);
-        myFileTag = null;
+        myFilePath = myFilePath.replace('\\', '/');
+        if (pathToPsi.containsKey(myFilePath)) {
+            myFile = pathToPsi.get(myFilePath);
+        }
+
+        isInFile = false;
         return end;
     }
 
@@ -130,11 +140,6 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
     @Override
     protected @IntentionFamilyName QualityToolType<PhalyfusionConfiguration> getQualityToolType() {
         return PhalyfusionQualityToolType.INSTANCE;
-    }
-
-    @NotNull
-    protected String getQuickFixFamilyName() {
-        return "Phalyfusion";
     }
 
     public boolean processStdErrMessages() {
@@ -175,7 +180,7 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
         this.mySAXParser.parse(source, messageHandler);
         if (messageHandler.isStatusValid()) {
             PhalyfusionMessage qualityToolMessage = new PhalyfusionMessage(this, messageHandler.getLineNumber(),
-                    messageHandler.getSeverity(), messageHandler.getMessageText(), myCurFile, this.getQuickFix(messageHandler));
+                    messageHandler.getSeverity(), messageHandler.getMessageText(), myFile, this.getQuickFix(messageHandler));
             int currLine = qualityToolMessage.getLineNum();
             if (currLine != this.myPrevLine) {
                 this.lineMessages.clear();
@@ -201,10 +206,6 @@ public class PhalyfusionMessageProcessor extends QualityToolXmlMessageProcessor 
 
     @Override
     public PsiFile getFile() {
-        if (myCurFile == null) {
-            return myFile;
-        }
-
-        return PsiManager.getInstance(myFile.getProject()).findFile(myCurFile);
+        return myFile;
     }
 }

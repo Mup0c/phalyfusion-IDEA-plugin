@@ -5,8 +5,6 @@ import com.intellij.util.ObjectUtils;
 import com.jetbrains.php.tools.quality.*;
 import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
 import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
-import ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager;
-import ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationProvider;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

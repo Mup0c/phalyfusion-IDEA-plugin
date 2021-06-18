@@ -5,7 +5,6 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.OnOffButton;
 import com.jetbrains.php.tools.quality.QualityToolConfigurableForm;
-import com.jetbrains.php.tools.quality.QualityToolConfiguration;
 import com.jetbrains.php.tools.quality.QualityToolCustomSettings;
 import com.jetbrains.php.tools.quality.QualityToolType;
 import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
