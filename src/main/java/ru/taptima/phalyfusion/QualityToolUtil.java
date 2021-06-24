@@ -2,6 +2,7 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
 import com.jetbrains.php.config.interpreters.PhpInterpreter;
 import com.jetbrains.php.config.interpreters.PhpInterpretersManagerImpl;
 import com.jetbrains.php.run.remote.PhpRemoteInterpreterManager;
@@ -38,14 +39,19 @@ public class QualityToolUtil {
             return null;
         }
 
-        return pathMapper.getRemoteFilePath(project.getBaseDir());
+        var projectDir = ProjectUtil.guessProjectDir(project);
+        if (projectDir == null) {
+            return null;
+        }
+
+        return pathMapper.getRemoteFilePath(projectDir);
     }
 
     /**
      * Extract the working dir for local or remote resolving
      */
     @Nullable
-    public static String getWorkingDirectoryFromAnnotator(@NotNull QualityToolAnnotatorInfo annotatorInfo) {
+    public static String getWorkingDirectoryFromAnnotator(@NotNull QualityToolAnnotatorInfo<PhalyfusionValidationInspection> annotatorInfo) {
         String interpreterId = annotatorInfo.getInterpreterId();
 
         String workingDir = null;

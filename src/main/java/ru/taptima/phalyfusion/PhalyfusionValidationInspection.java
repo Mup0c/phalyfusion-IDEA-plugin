@@ -1,14 +1,12 @@
 package ru.taptima.phalyfusion;
 
-import com.intellij.codeInspection.CleanupLocalInspectionTool;
-import com.jetbrains.php.tools.quality.QualityToolAnnotator;
 import com.jetbrains.php.tools.quality.QualityToolValidationInspection;
 import org.jetbrains.annotations.NotNull;
 
-public class PhalyfusionValidationInspection extends QualityToolValidationInspection implements CleanupLocalInspectionTool {
+public class PhalyfusionValidationInspection extends QualityToolValidationInspection {
     @NotNull
     @Override
-    protected QualityToolAnnotator getAnnotator() {
+    protected PhalyfusionAnnotator getAnnotator() {
         return PhalyfusionAnnotator.INSTANCE;
     }
 

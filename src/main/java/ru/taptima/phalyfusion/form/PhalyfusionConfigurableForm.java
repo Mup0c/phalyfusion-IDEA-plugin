@@ -3,11 +3,17 @@ package ru.taptima.phalyfusion.form;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.components.OnOffButton;
 import com.jetbrains.php.tools.quality.QualityToolConfigurableForm;
+import com.jetbrains.php.tools.quality.QualityToolCustomSettings;
+import com.jetbrains.php.tools.quality.QualityToolType;
+import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
 import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import javax.swing.*;
 
 public class PhalyfusionConfigurableForm<C extends PhalyfusionConfiguration> extends QualityToolConfigurableForm<C> {
     public PhalyfusionConfigurableForm(@NotNull Project project, @NotNull C configuration) {
@@ -36,7 +42,62 @@ public class PhalyfusionConfigurableForm<C extends PhalyfusionConfiguration> ext
             : Pair.create(false, message);
     }
 
+    @Override
+    public @Nullable QualityToolCustomSettings getCustomConfigurable(@NotNull Project project, @NotNull C configuration) {
+        return new PhalyfusionCustomConfigurable(configuration);
+    }
+
+    @Override
+    public QualityToolType getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
+    }
+
     public boolean isValidToolFile(VirtualFile file) {
         return file.getName().startsWith("phalyfusion");
+    }
+
+    static class PhalyfusionCustomConfigurable extends QualityToolCustomSettings {
+        public PhalyfusionCustomConfigurable(PhalyfusionConfiguration configuration) {
+            super();
+            myConfiguration = configuration;
+            initialOnFlyMode = myConfiguration.getOnFlyMode();
+        }
+
+        private final PhalyfusionConfiguration myConfiguration;
+        private final boolean initialOnFlyMode;
+        private OnOffButton onFlyModeBtn;
+
+        @Override
+        public @NotNull Pair<Boolean, String> validate() {
+            return new Pair<>(true, "OK");
+        }
+
+        @Override
+        public @Nls(capitalization = Nls.Capitalization.Title) String getDisplayName() {
+            return "Phalyfusion On-Fly Mode";
+        }
+
+        @Override
+        public @Nullable JComponent createComponent() {
+            var panel = new JPanel();
+            var layout = new BoxLayout(panel, BoxLayout.X_AXIS);
+            panel.setLayout(layout);
+            var label = new JLabel("Launch Phalyfusion tool in on-fly mode (may cause lags)");
+            panel.add(label);
+            onFlyModeBtn = new OnOffButton();
+            onFlyModeBtn.setSelected(initialOnFlyMode);
+            panel.add(onFlyModeBtn);
+            return panel;
+        }
+
+        @Override
+        public boolean isModified() {
+            return onFlyModeBtn.isSelected() != initialOnFlyMode;
+        }
+
+        @Override
+        public void apply() {
+            myConfiguration.setOnFlyMode(onFlyModeBtn.isSelected());
+        }
     }
 }

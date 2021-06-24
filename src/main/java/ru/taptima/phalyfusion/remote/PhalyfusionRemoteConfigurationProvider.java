@@ -21,10 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class PhalyfusionRemoteConfigurationProvider extends PhalyfusionConfigurationProvider {
-    public String getConfigurationName(@Nullable String interpreterName) {
-        return PhalyfusionRemoteConfiguration.getDefaultName(interpreterName);
-    }
-
     public boolean canLoad(@NotNull String tagName) {
         return StringUtil.equals(tagName, "phalyfusion_by_interpreter");
     }

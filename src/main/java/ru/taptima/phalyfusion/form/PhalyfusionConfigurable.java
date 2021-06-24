@@ -2,22 +2,22 @@ package ru.taptima.phalyfusion.form;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.jetbrains.php.tools.quality.QualityToolConfigurationComboBox;
-import com.jetbrains.php.tools.quality.QualityToolProjectConfigurableForm;
-import com.jetbrains.php.tools.quality.QualityToolProjectConfiguration;
-import com.jetbrains.php.tools.quality.QualityToolsIgnoreFilesConfigurable;
-import ru.taptima.phalyfusion.PhalyfusionValidationInspection;
+import com.jetbrains.php.tools.quality.*;
+import ru.taptima.phalyfusion.PhalyfusionQualityToolType;
 import ru.taptima.phalyfusion.blacklist.PhalyfusionIgnoredFilesConfigurable;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.*;
 
 public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm implements Configurable.NoScroll {
     public PhalyfusionConfigurable(@NotNull Project project) {
         super(project);
     }
 
-    protected QualityToolProjectConfiguration getProjectConfiguration() {
+    protected QualityToolProjectConfiguration<PhalyfusionConfiguration> getProjectConfiguration() {
         return PhalyfusionProjectConfiguration.getInstance(this.myProject);
     }
 
@@ -35,14 +35,19 @@ public class PhalyfusionConfigurable extends QualityToolProjectConfigurableForm 
         return PhalyfusionConfigurable.class.getName();
     }
 
-    @NotNull
-    protected String getInspectionShortName() {
-        return new PhalyfusionValidationInspection().getShortName();
+    @Override
+    public @NotNull JComponent getComponent() {
+        return super.getComponent();
     }
 
     @NotNull
-    protected QualityToolConfigurationComboBox createConfigurationComboBox() {
+    protected QualityToolConfigurationComboBox<PhalyfusionConfiguration> createConfigurationComboBox() {
         return new PhalyfusionConfigurationComboBox(this.myProject);
+    }
+
+    @Override
+    protected QualityToolType<PhalyfusionConfiguration> getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
     }
 
     protected QualityToolsIgnoreFilesConfigurable getIgnoredFilesConfigurable() {

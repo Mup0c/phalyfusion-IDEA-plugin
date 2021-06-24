@@ -18,25 +18,35 @@
     <h2>Installation and usage</h2>
     <ul>
         <li>Install and configure <a href="https://github.com/taptima/phalyfusion">Phalyfusion</a> and desired code analysers</li>
-        <li>Install the plugin and provide path to Phalyfusion executable "Preferences | Languages & Frameworks | PHP | Quality Tools | Phalyfusion"</li>
-        <li>Enable inspection in "Preferences | Editor | Inspections | PHP | Quality tools | Phalyfusion validation"</li>
-        <li>Instant analysis of current file highlights found errors in your code</li>
-        <li>You can manually run analysis via "Run inspection by name" choosing "Phalyfusion validation" and configuring analysis scope</li>
+        <li>Install the plugin by going to Preferences | Plugins and searching "Phalyfusion" </li>
+        <li>Plugin will find the path to Phalyfusion executable automatically on first run.
+            You can provide path to Phalyfusion executable by yourself if needed.
+            See "Preferences | Languages & Frameworks | PHP | Quality Tools | Phalyfusion"</li>
+        <li>Enable inspections "Phalyfusion global validation" and "Phalyfusion on-fly validation" in "Preferences | Editor | Inspections | PHP | Quality tools"
+            to be able to launch Phalyfusion via plugin.</li>
+        <li>Use toolbar button or "Run | Run Phalyfusion" option to configure an analysis scope and launch Phalyfusion</li>
+        <li>Enable "Launch Phalyfusion in on-fly mode" setting in "Preferences | Language & Frameworks | PHP | Quality Tools | Phalyfusion | Configuration"
+            for instant analysis of the current file and error highlighting</li>
     </ul>
     <br>
     <h2>Features</h2>
     <ul>
+        <li>Phalyfusion auto detection in current project</li>
         <li>Combining reports of multiple PHP static code analysers</li>
+        <li>Provide file-by-file structured interactive analysis report</li>
+        <li>Navigation between errors found by Phalyfusion</li>
         <li>Perform instant analysis of current file</li>
         <li>Show found errors by highlighting them in code and provide descriptions in tooltips</li>
-        <li>Provide file-by-file structured interactive analysis report</li>
+        <li>Auto generate Phalyfusion neon configuration on the first run with all detected in the current project code analysers.
+        <br>
+        Note: You need to set up all configuration files for code analysers by yourself.</li>
     </ul>
     <br>
     <a href="https://github.com/taptima/idea-php-phalyfusion-plugin">Documentation</a> |
     <a href="https://github.com/taptima/idea-php-phalyfusion-plugin/issues">Issues</a>
     ]]></description>
 
-    <idea-version since-build="181"/>
+    <idea-version since-build="211"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.jetbrains.php</depends>
@@ -45,21 +55,31 @@
 
     <extensions defaultExtensionNs="com.intellij">
 
-        <applicationService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$AppPhalyfusionConfigurationBaseManager"/>
+        <applicationService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$PhalyfusionAppConfigurationBaseManager"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
-        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$ProjectPhalyfusionConfigurationBaseManager"/>
+        <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager$PhalyfusionProjectConfigurationBaseManager"/>
         <externalAnnotator language="PHP" implementationClass="ru.taptima.phalyfusion.PhalyfusionAnnotator"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration"/>
         <projectService serviceImplementation="ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList"/>
         <localInspection language="PHP"
-                         shortName="PhalyfusionValidation"
-                         displayName="Phalyfusion validation"
+                         shortName="PhalyfusionValidationInspection"
+                         displayName="Phalyfusion on-fly validation"
                          groupPath="PHP"
                          groupName="Quality tools"
-                         enabledByDefault="false"
+                         enabledByDefault="true"
                          level="WEAK WARNING"
-                         cleanupTool="true"
+                         cleanupTool="false"
                          implementationClass="ru.taptima.phalyfusion.PhalyfusionValidationInspection"/>
+        <globalInspection
+                language="PHP"
+                shortName="PhalyfusionGlobal"
+                displayName="Phalyfusion global validation"
+                enabledByDefault="true"
+                groupPath="PHP"
+                groupName="Quality tools"
+                cleanupTool="true"
+                level="ERROR"
+                implementationClass="ru.taptima.phalyfusion.PhalyfusionGlobalInspection"/>
     </extensions>
 
     <extensionPoints>
@@ -68,15 +88,17 @@
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.jetbrains.php">
+        <composerConfigClient implementation="ru.taptima.phalyfusion.configuration.PhalyfusionComposerConfig"/>
         <tools.quality.type implementation="ru.taptima.phalyfusion.PhalyfusionQualityToolType"/>
         <tools.projectConfigurableForm instance="ru.taptima.phalyfusion.form.PhalyfusionConfigurable"/>
-        <config.interpreters.PhpInterpretersStateListener implementation="ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager"/>
     </extensions>
 
     <actions>
-        <action id="your.action.id" class="ru.taptima.phalyfusion.ui.runPhalyfusionInspectionAction"
-                text="Some label" description="Action description" icon="AllIcons.General.AddJdk">
-            <add-to-group group-id="ToolbarRunGroup" anchor="last" />
+        <action id="ru.taptima.phalyfusion.action.PhalyfusionAction"
+                class="ru.taptima.phalyfusion.action.PhalyfusionAction" text="Run Phalyfusion"
+                description="Run phalyfusion tool" icon="AllIcons.General.AddJdk">
+            <add-to-group group-id="ToolbarRunGroup" anchor="last"/>
+            <add-to-group group-id="PhpRunMenu" anchor="last"/>
         </action>
     </actions>
 

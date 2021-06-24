@@ -20,6 +20,7 @@ public abstract class PhalyfusionConfigurationProvider extends QualityToolConfig
         return extensions.length == 1 ? extensions[0] : null;
     }
 
+    @Override
     protected void fillSettingsByDefaultValue(@NotNull PhalyfusionConfiguration settings, @NotNull PhalyfusionConfiguration localConfiguration, @NotNull NullableFunction<String, String> preparePath) {
         super.fillSettingsByDefaultValue(settings, localConfiguration, preparePath);
 

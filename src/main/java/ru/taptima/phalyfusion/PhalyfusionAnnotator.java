@@ -2,21 +2,25 @@ package ru.taptima.phalyfusion;
 
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.execution.ExecutionException;
-import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.PathUtil;
+import com.intellij.psi.PsiFile;
 import com.jetbrains.php.config.interpreters.PhpSdkFileTransfer;
+import com.jetbrains.php.lang.PhpLanguage;
+import com.jetbrains.php.lang.psi.PhpFile;
 import com.jetbrains.php.tools.quality.*;
 import ru.taptima.phalyfusion.blacklist.PhalyfusionBlackList;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfiguration;
+import ru.taptima.phalyfusion.configuration.PhalyfusionConfigurationManager;
 import ru.taptima.phalyfusion.configuration.PhalyfusionProjectConfiguration;
-import ru.taptima.phalyfusion.form.PhalyfusionConfigurable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public class PhalyfusionAnnotator extends QualityToolAnnotator {
+public class PhalyfusionAnnotator extends QualityToolAnnotator<PhalyfusionValidationInspection> {
     public static final PhalyfusionAnnotator INSTANCE = new PhalyfusionAnnotator();
 
     @NotNull
@@ -25,10 +29,9 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
         return "phalyfusion_temp.tmp";
     }
 
-    @NotNull
     @Override
-    protected String getInspectionId() {
-        return (new PhalyfusionValidationInspection()).getID();
+    protected @Nullable List<String> getOptions(@Nullable String filepath, @NotNull PhalyfusionValidationInspection inspection, @NotNull Project project) {
+        return null;
     }
 
     @Override
@@ -36,31 +39,66 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
         return new PhalyfusionMessageProcessor(qualityToolAnnotatorInfo);
     }
 
-    protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo, @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
-        //List<String> params = getCommandLineOptions(annotatorInfo.getFilePath());
-        List<String> params = getCommandLineOptions(PathUtil.toSystemIndependentName(annotatorInfo.getOriginalFile().getPath()));
+    public static void launchQualityTool(@NotNull PsiFile[] files, @NotNull QualityToolAnnotatorInfo annotatorInfo, @NotNull QualityToolMessageProcessor messageProcessor,
+                                         @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
         PhalyfusionBlackList blackList = PhalyfusionBlackList.getInstance(annotatorInfo.getProject());
+        String[] filesPaths = Arrays.stream(files).filter(psiFile -> isFileSuitable(psiFile, blackList))
+                .map(psiFile -> psiFile.getVirtualFile().getPath()).toArray(String[]::new);
 
+        if (filesPaths.length == 0) {
+            return;
+        }
+
+        List<String> params = getCommandLineOptions(filesPaths);
         String workingDir = QualityToolUtil.getWorkingDirectoryFromAnnotator(annotatorInfo);
-        QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, params);
+        var configurationManager = PhalyfusionConfigurationManager.getInstance(annotatorInfo.getProject());
+
+        try {
+            configurationManager.checkNeonConfiguration();
+        } catch (IOException e) {
+            logWarning(annotatorInfo, "Failed to create phalyfusion configuration file", e);
+        }
+
+        // 2021.1 API
+        //QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, params);
+
+        QualityToolProcessCreator.runToolProcess(annotatorInfo, blackList, messageProcessor, workingDir, transfer, null, params);
+
         if (messageProcessor.getInternalErrorMessage() != null) {
             if (annotatorInfo.isOnTheFly()) {
                 String message = messageProcessor.getInternalErrorMessage().getMessageText();
-                showProcessErrorMessage(annotatorInfo, blackList, message);
+                showProcessErrorMessage(annotatorInfo.getInspection(), message, new ArrayList<>());
             }
 
             messageProcessor.setFatalError();
         }
     }
 
-    private List<String> getCommandLineOptions(String filePath) {
-        ArrayList<String> options = new ArrayList<>();
+    private static boolean isFileSuitable(@NotNull PsiFile file, @NotNull PhalyfusionBlackList blackList) {
+        return file instanceof PhpFile && file.getViewProvider().getBaseLanguage() == PhpLanguage.INSTANCE
+                && file.getContext() == null && !blackList.containsFile(file.getVirtualFile())
+                && file.getVirtualFile().isValid();
+    }
 
+    private static List<String> getCommandLineOptions(String[] filePaths) {
+        ArrayList<String> options = new ArrayList<>();
         options.add("analyse");
         options.add("--format=checkstyle");
-        options.add(filePath);
-
+        options.addAll(Arrays.asList(filePaths));
         return options;
+    }
+
+    @Override
+    protected void runTool(@NotNull QualityToolMessageProcessor messageProcessor, @NotNull QualityToolAnnotatorInfo annotatorInfo,
+                           @NotNull PhpSdkFileTransfer transfer) throws ExecutionException {
+        PhalyfusionConfiguration configuration = (PhalyfusionConfiguration) getConfiguration(annotatorInfo.getProject(), annotatorInfo.getInspection());
+
+        // This inspection is only for on-fly mode. Batch inspections are provided with PhalyfusionGlobal
+        if (configuration == null || !annotatorInfo.isOnTheFly() || !configuration.getOnFlyMode()) {
+            return;
+        }
+
+        launchQualityTool(new PsiFile[] { annotatorInfo.getPsiFile() }, annotatorInfo, messageProcessor, transfer);
     }
 
     @Nullable
@@ -70,5 +108,10 @@ public class PhalyfusionAnnotator extends QualityToolAnnotator {
         } catch (QualityToolValidationException e) {
             return null;
         }
+    }
+
+    @Override
+    protected @NotNull QualityToolType<PhalyfusionConfiguration> getQualityToolType() {
+        return PhalyfusionQualityToolType.INSTANCE;
     }
 }

@@ -12,23 +12,34 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+
 public class PhalyfusionConfiguration implements QualityToolConfiguration {
     private static final String LOCAL = "Local";
     private String myPhalyfusionPath = "";
     private String myStandards = "";
     private int myMaxMessagesPerFile = 100;
     private int myTimeoutMs = 30000;
+    private boolean isOnFlyModeEnabled = false;
 
-    public PhalyfusionConfiguration() {
-    }
+    public PhalyfusionConfiguration() { }
 
+    @Override
     @Transient
     public String getToolPath() {
         return this.myPhalyfusionPath;
     }
 
+    @Override
     public void setToolPath(String toolPath) {
         this.myPhalyfusionPath = toolPath;
+    }
+
+    public boolean getOnFlyMode() {
+        return isOnFlyModeEnabled;
+    }
+
+    public void setOnFlyMode(boolean val) {
+        isOnFlyModeEnabled = val;
     }
 
     @Attribute("tool_path")
@@ -61,13 +72,11 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
 
     @Transient
     public String[] getStandards() {
-        return (String[]) ArrayUtil.append(this.myStandards.split(";"), "Custom");
+        return ArrayUtil.append(this.myStandards.split(";"), "Custom");
     }
 
     public void setStandards(String[] standards) {
-        this.myStandards = (String) Arrays.stream(standards).filter((standard) -> {
-            return !"Custom".equals(standard);
-        }).collect(Collectors.joining(";"));
+        this.myStandards = Arrays.stream(standards).filter((standard) -> !"Custom".equals(standard)).collect(Collectors.joining(";"));
     }
 
     @Attribute("timeout")
@@ -75,25 +84,31 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
         return this.myTimeoutMs;
     }
 
+    @Override
     public void setTimeout(int timeout) {
         this.myTimeoutMs = timeout;
     }
 
+    @Override
     @NotNull
     public String getPresentableName(@Nullable Project project) {
         return this.getId();
     }
 
+    @Override
     @NotNull
     public String getId() {
         return "Local";
     }
 
+    @Override
     @Nullable
     public String getInterpreterId() {
         return null;
     }
 
+    @Override
+    @NotNull
     public PhalyfusionConfiguration clone() {
         PhalyfusionConfiguration settings = new PhalyfusionConfiguration();
         this.clone(settings);
@@ -105,15 +120,19 @@ public class PhalyfusionConfiguration implements QualityToolConfiguration {
         settings.myStandards = this.myStandards;
         settings.myMaxMessagesPerFile = this.myMaxMessagesPerFile;
         settings.myTimeoutMs = this.myTimeoutMs;
+        settings.isOnFlyModeEnabled = this.isOnFlyModeEnabled;
     }
 
+    @Override
     public int compareTo(@NotNull QualityToolConfiguration o) {
         if (!(o instanceof PhalyfusionConfiguration)) {
             return 1;
         } else if (StringUtil.equals(this.getPresentableName(null), "Local")) {
             return -1;
-        } else {
+        } else if (isOnFlyModeEnabled == ((PhalyfusionConfiguration) o).isOnFlyModeEnabled) {
             return StringUtil.equals(o.getPresentableName(null), "Local") ? 1 : StringUtil.compare(this.getPresentableName(null), o.getPresentableName(null), false);
+        } else {
+            return isOnFlyModeEnabled ? 1 : -1;
         }
     }
 }
