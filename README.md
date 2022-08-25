@@ -1,4 +1,5 @@
-IntelliJ IDEA / PhpStorm Phalyfusion Plugin
+# IntelliJ IDEA / PhpStorm Phalyfusion Plugin
+## NOTE: This repository is the development history. See [taptima/idea-php-phalyfusion-plugin] for the current version.
 -------------
 [![Version](http://phpstorm.espend.de/badge/15198/version)](https://plugins.jetbrains.com/plugin/15198)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/15198)](https://plugins.jetbrains.com/plugin/15198)
@@ -40,3 +41,7 @@ PhpStorm __2020.1 — 2020.2.2__
 ![Code editor highlighting](https://plugins.jetbrains.com/files/15198/screenshot_23442.png)
 ![Inspection result](https://plugins.jetbrains.com/files/15198/screenshot_23443.png)
 ![Specify analysis scope](https://plugins.jetbrains.com/files/15198/screenshot_23444.png)
+
+[//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
+
+[taptima/idea-php-phalyfusion-plugin]: https://github.com/taptima/idea-php-phalyfusion-plugin
